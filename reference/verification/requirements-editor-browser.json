@@ -1,0 +1,90 @@
+{
+  "base": "http://100.67.16.86:3098",
+  "passed": true,
+  "cases": [
+    {
+      "role": "ADMIN",
+      "viewport": {
+        "width": 1440,
+        "height": 1050
+      },
+      "runtime": {
+        "secure": false,
+        "randomUUID": "undefined",
+        "getRandomValues": "function"
+      },
+      "checks": [
+        "add",
+        "edit",
+        "remove",
+        "save",
+        "reload",
+        "stable ID"
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "ADMIN",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "runtime": {
+        "secure": false,
+        "randomUUID": "undefined",
+        "getRandomValues": "function"
+      },
+      "checks": [
+        "add",
+        "edit",
+        "remove",
+        "save",
+        "reload",
+        "stable ID"
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "SUPER_ADMIN",
+      "viewport": {
+        "width": 1440,
+        "height": 1050
+      },
+      "runtime": {
+        "secure": false,
+        "randomUUID": "undefined",
+        "getRandomValues": "function"
+      },
+      "checks": [
+        "add",
+        "edit",
+        "remove",
+        "save",
+        "reload",
+        "stable ID"
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "SUPER_ADMIN",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "runtime": {
+        "secure": false,
+        "randomUUID": "undefined",
+        "getRandomValues": "function"
+      },
+      "checks": [
+        "add",
+        "edit",
+        "remove",
+        "save",
+        "reload",
+        "stable ID"
+      ],
+      "pageErrors": []
+    }
+  ]
+}

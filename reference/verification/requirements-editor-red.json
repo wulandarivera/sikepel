@@ -1,0 +1,6 @@
+{
+  "base": "http://100.67.16.86:3098",
+  "passed": false,
+  "cases": [],
+  "error": "Add failed: {\"role\":\"ADMIN\",\"viewport\":{\"width\":1440,\"height\":1050},\"runtime\":{\"secure\":false,\"randomUUID\":\"undefined\",\"getRandomValues\":\"function\"},\"errors\":[\"crypto.randomUUID is not a function\"]}"
+}
