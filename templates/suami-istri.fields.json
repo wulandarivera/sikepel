@@ -1,0 +1,188 @@
+[
+  {
+    "key": "nama_suami",
+    "label": "Nama lengkap suami",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "tempat_lahir_suami",
+    "label": "Tempat lahir suami",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "tanggal_lahir_suami",
+    "label": "Tanggal lahir suami",
+    "type": "date",
+    "required": true
+  },
+  {
+    "key": "pekerjaan_suami",
+    "label": "Pekerjaan suami",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "agama_suami",
+    "label": "Agama suami",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "negara_suami",
+    "label": "Kewarganegaraan suami",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "alamat_suami",
+    "label": "Alamat suami",
+    "type": "textarea",
+    "required": true
+  },
+  {
+    "key": "rt_suami",
+    "label": "RT suami",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "rw_suami",
+    "label": "RW suami",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "kel_suami",
+    "label": "Kelurahan/desa suami",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "kec_suami",
+    "label": "Kecamatan suami",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "kota_suami",
+    "label": "Kota/kabupaten suami",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "nama_istri",
+    "label": "Nama lengkap istri",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "tempat_lahir_istri",
+    "label": "Tempat lahir istri",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "tanggal_lahir_istri",
+    "label": "Tanggal lahir istri",
+    "type": "date",
+    "required": true
+  },
+  {
+    "key": "pekerjaan_istri",
+    "label": "Pekerjaan istri",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "agama_istri",
+    "label": "Agama istri",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "negara_istri",
+    "label": "Kewarganegaraan istri",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "alamat_istri",
+    "label": "Alamat istri",
+    "type": "textarea",
+    "required": true
+  },
+  {
+    "key": "rt_istri",
+    "label": "RT istri",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "rw_istri",
+    "label": "RW istri",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "kel_istri",
+    "label": "Kelurahan/desa istri",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "kec_istri",
+    "label": "Kecamatan istri",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "kota_istri",
+    "label": "Kota/kabupaten istri",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "tanggal_pernikahan",
+    "label": "Tanggal pernikahan",
+    "type": "date",
+    "required": true
+  },
+  {
+    "key": "keterangan_akta_perkawinan",
+    "label": "Keterangan buku nikah / akta perkawinan",
+    "type": "textarea",
+    "required": true
+  },
+  {
+    "key": "nomor_pengantar_rt",
+    "label": "Nomor surat pengantar RT/RW (opsional)",
+    "type": "text",
+    "required": false
+  },
+  {
+    "key": "tanggal_pengantar_rt",
+    "label": "Tanggal surat pengantar RT/RW (opsional)",
+    "type": "date",
+    "required": false
+  },
+  {
+    "key": "keperluan",
+    "label": "Peruntukan surat",
+    "type": "textarea",
+    "required": true
+  },
+  {
+    "key": "jabatan_detail",
+    "label": "Keterangan tambahan jabatan (opsional)",
+    "type": "text",
+    "required": false
+  },
+  {
+    "key": "catatan",
+    "label": "Catatan petugas (tidak tercetak)",
+    "type": "textarea",
+    "required": false
+  }
+]

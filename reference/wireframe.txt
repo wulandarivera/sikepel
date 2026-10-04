@@ -1,0 +1,165 @@
+﻿SIKEPEL v1 — Low-Fidelity Wireframe Handoff
+
+
+Figma file: https://www.figma.com/design/C0gkEBqzDk7DAT5ZOcAWGD
+
+
+1. Tujuan
+Dokumen ini menjadi handoff ringkas antara PRD/UI-UX Specification dan wireframe P0. Wireframe bersifat low-fidelity: fokus pada struktur, hierarchy, alur, permission, dan state; belum menetapkan visual branding final.
+
+
+2. Core Flow P0
+Login → Dashboard → Pilih Jenis Surat → Cari Penduduk → Tambah Penduduk jika belum ada → Isi Form Surat → Preview → Konfirmasi Terbit → Generating → Surat Terbit.
+
+
+Failure recovery: setelah nomor dialokasikan, kegagalan PDF masuk ke ISSUE_PENDING dan Retry menggunakan nomor yang sama.
+
+
+3. Screen Inventory
+S01 — Login: autentikasi pengguna dan entry point tenant.
+S02 — Dashboard: ringkasan aktivitas dan tombol Buat Pelayanan.
+S03 — Pilih Jenis Surat: katalog pelayanan aktif.
+S04 — Cari Penduduk: pencarian NIK/nama dan entry Tambah Penduduk.
+S05 — Tambah Penduduk: penyimpanan data lokal sambil melanjutkan pelayanan.
+S06 — Form Surat: data otomatis penduduk + field khusus jenis surat.
+S07 — Preview: pemeriksaan PDF draft sebelum nomor resmi.
+S08 — Konfirmasi Terbit: irreversible action confirmation sebelum nomor dialokasikan.
+S09 — Generating: state setelah nomor resmi dialokasikan dan PDF sedang dibuat.
+S10 — Surat Terbit: PDF final, download, print, dan lanjut pelayanan baru.
+S11 — Retry PDF: recovery ISSUE_PENDING tanpa membuat nomor baru.
+S12 — Arsip Surat: search/filter surat historis.
+S13 — Detail Arsip: metadata, snapshot, PDF, dan cetak ulang.
+S14 — Data Penduduk: master data lokal tenant.
+S15 — Template Global: super admin mengelola satu template per jenis surat.
+S16 — Kelurahan & Pejabat: identitas tenant dan pejabat penandatangan.
+
+
+4. UX Rules yang Tercermin di Wireframe
+Tenant tidak dipilih bebas oleh operator; identitas kelurahan berasal dari session.
+Operator tidak mengakses editor template.
+Nomor surat belum diberikan pada Preview.
+Aksi Terbitkan memiliki konfirmasi khusus.
+Setelah nomor diberikan, UI harus menahan double submit dan menampilkan status proses.
+ISSUE_PENDING harus dapat di-retry secara idempotent.
+Surat ISSUED tidak diedit in-place.
+Cetak ulang menggunakan snapshot historis dan tidak mengalokasikan nomor baru.
+Arsip dan data penduduk selalu terisolasi per kelurahan kecuali Super Admin.
+
+
+5. Design Direction Setelah Low-Fidelity
+Tahap berikutnya adalah memilih visual direction dan mengubah screen P0 menjadi high-fidelity UI. Rekomendasi arah: tampilan administrasi pemerintah yang modern, sederhana, desktop-first, kontras jelas, tidak dekoratif berlebihan, dan menggunakan komponen konsisten untuk form, table, status, modal, serta navigation.
+
+
+6. Handoff ke Development
+Setiap screen high-fidelity berikutnya harus dipetakan ke route, role, empty/loading/error state, request API/server action, validation schema, dan acceptance criteria yang sudah didefinisikan dalam PRD serta UI/UX Specification
+
+
+7. Asset Implementation Mapping
+
+
+Assets pada folder PROJECT SIKEPEL menjadi sumber visual resmi untuk UI high-fidelity dan implementasi web. Pemakaian harus menjaga scope v1 agar visual tidak mengesankan fitur yang belum aktif.
+
+
+SIKEPEL - Logo Utama.png
+Digunakan sebagai primary brand lockup pada login/brand area, dokumentasi desain, dan materi presentasi. Untuk area sempit seperti sidebar collapsed, jangan memaksa lockup penuh; gunakan App Icon.
+
+
+SIKEPEL - App Icon.png
+Digunakan untuk favicon/PWA icon, compact sidebar brand, app tile, dan identitas kecil pada shell aplikasi.
+
+
+SIKEPEL - Banner Landing Page.png
+Digunakan untuk konsep landing/portal warga dan materi proposal. Karena artwork memuat pesan pengajuan surat oleh warga dan CTA “Ajukan Surat Sekarang”, banner tidak digunakan sebagai bukti bahwa portal warga sudah aktif pada SIKEPEL v1 operator. Pada prototype operator, banner dapat ditempatkan di section Brand/Future Citizen Portal, bukan sebagai fungsi aktif.
+
+
+SIKEPEL - Ilustrasi Pengajuan Surat Online.png
+Digunakan untuk visual konsep citizen-facing submission atau roadmap portal warga. Tidak digunakan untuk menyatakan bahwa warga sudah dapat melakukan pengajuan online pada MVP v1.
+
+
+SIKEPEL - Ilustrasi Verifikasi Admin.png
+Digunakan pada state/modul admin yang berkaitan dengan pemeriksaan data, verifikasi, atau penerbitan. Paling relevan untuk admin dashboard, review state, atau onboarding admin.
+
+
+SIKEPEL - Ilustrasi Dokumen Siap Diunduh.png
+Digunakan pada success state setelah surat final berhasil diterbitkan, khususnya S10/HF Surat Terbit, download/print confirmation, atau empty-success illustration.
+
+
+Screen mapping high-fidelity:
+HF01 Login → Logo Utama / App Icon.
+HF02 Dashboard → App Icon pada shell; ilustrasi Verifikasi Admin secara selektif pada admin information card.
+HF03–HF05 Pelayanan → App Icon/brand shell; tidak menggunakan citizen-online illustration agar fokus form tetap tinggi.
+HF06 Preview & Terbitkan → brand shell; tidak menggunakan decorative illustration di area PDF.
+S10/HF Surat Terbit → Ilustrasi Dokumen Siap Diunduh sebagai success visual.
+Future Citizen Portal → Banner Landing Page + Ilustrasi Pengajuan Surat Online.
+
+
+Implementation note untuk development:
+Semua asset web harus disimpan sebagai static assets atau object storage yang terkontrol, diberi alt text yang sesuai, dioptimalkan ukuran file untuk web, dan tidak diambil langsung dari public Google Drive URL pada runtime production.
+
+
+8. High-Fidelity Continuation Spec — HF07–HF16
+
+
+HF07 — Konfirmasi Terbitkan
+Layout: centered confirmation dialog di atas Preview screen, max width sekitar 520 px. Header berisi icon warning ringan, title “Terbitkan Surat?”, lalu ringkasan jenis surat, nama penduduk, pejabat, dan tenant. Copy utama: “Nomor resmi akan dialokasikan setelah konfirmasi.” Primary button “Terbitkan Surat”; secondary “Kembali”. Primary action harus disabled segera setelah klik pertama. Tidak menggunakan illustration agar keputusan tetap fokus.
+
+
+HF08 — Generating / Issue Pending
+Layout: app shell + centered processing card. Bagian atas menampilkan badge “Diproses”, nomor surat yang sudah dialokasikan, jenis surat, nama penduduk, dan timestamp. Progress menggunakan spinner/progress indicator non-deterministik dengan copy “Sedang membuat PDF final…”. Warning kecil: “Jangan ulangi penerbitan. Nomor surat sudah tersimpan.” Jika gagal, state berubah tanpa membuat record baru.
+
+
+HF09 — Surat Berhasil Terbit
+Layout: success state yang tetap berada di app shell. Kiri: ringkasan nomor, jenis surat, penduduk, tanggal, pejabat. Kanan/atas: SIKEPEL - Ilustrasi Dokumen Siap Diunduh.png sebagai visual sukses. Primary actions: “Buka PDF”, “Download PDF”, “Print”. Secondary: “Buat Pelayanan Baru” dan “Kembali ke Dashboard”. Badge status “Terbit” menggunakan semantic success token.
+
+
+HF10 — Retry PDF
+Layout: recovery card dengan semantic danger/warning yang tetap tenang, bukan error page penuh. Copy: “PDF belum berhasil dibuat. Nomor surat tetap tersimpan.” Tampilkan nomor surat, waktu percobaan terakhir, dan reference ID. Primary “Coba Lagi”; secondary “Kembali ke Arsip”. Jangan menawarkan “Buat Surat Baru”. Retry harus idempotent dan button memiliki loading state.
+
+
+HF11 — Arsip Surat
+Layout: app shell + PageHeader “Arsip Surat”. Toolbar berisi search nomor/NIK/nama, filter Jenis Surat, Status, Rentang Tanggal, dan Reset. Table desktop: Nomor | Jenis Surat | Penduduk | Tanggal | Status | Dibuat Oleh | Aksi. Status menggunakan badge semantic. Pagination di bawah. Empty state: copy “Tidak ada surat pada filter ini” + Reset Filter. Tidak menggunakan illustration besar agar table tetap dominan.
+
+
+HF12 — Detail Arsip
+Layout: two-column desktop. Kolom utama: PDF viewer / document card. Kolom kanan: metadata card (nomor, jenis, tanggal, status, penandatangan, dibuat oleh), snapshot penduduk, template version. Action header: Download, Print, dan menu tambahan. Jika status ISSUED tidak ada tombol Edit. Void/Cancel hanya untuk role berwenang dan harus membuka dialog alasan wajib.
+
+
+HF13 — Data Penduduk
+Layout: app shell + PageHeader “Data Penduduk” + CTA “Tambah Penduduk”. Search bar dominan untuk NIK/nama, filter opsional, lalu table Nama | NIK | No KK | Alamat | Diperbarui | Aksi. NIK dapat dimasking pada list bila kebijakan mengharuskan. Klik row membuka detail. Empty state memiliki CTA tambah penduduk. Semua query tenant-scoped.
+
+
+HF14 — Tambah Penduduk
+Layout: form desktop dalam card lebar dengan section “Identitas”, “Status”, dan “Alamat”. Gunakan dua kolom untuk field pendek; alamat full width. NIK dan No KK diperlakukan sebagai string, bukan numeric arithmetic. Primary “Simpan”; pada flow pelayanan gunakan label “Simpan & Lanjutkan Pelayanan”. Error inline + summary error. Warning duplicate NIK harus jelas tanpa mengklaim verifikasi Dukcapil.
+
+
+HF15 — Template Global
+Layout: Super Admin only. Header berisi nama jenis surat dan readiness badge. Section “Versi Template” berupa table/list: Version | Uploaded | Uploaded By | Validation | Status | Actions. CTA “Upload Versi Baru”. Panel kanan atau modal validation menampilkan placeholder ditemukan, tidak dikenal, dan hilang. Hanya satu versi aktif. Gunakan SIKEPEL - Ilustrasi Verifikasi Admin.png secara selektif pada empty/onboarding state, bukan pada table utama.
+
+
+HF16 — Kelurahan & Pejabat
+Layout: tabbed admin page: “Profil Kelurahan” dan “Pejabat”. Profil Kelurahan memuat identitas yang dipakai template: nama, kecamatan, kabupaten/kota, alamat, telepon, email, kode pos, kode kelurahan, logo. Tab Pejabat menggunakan table Nama | NIP | Jabatan | Periode | Status | Aksi dan CTA “Tambah Pejabat”. Warning copy: “Perubahan pejabat hanya memengaruhi surat baru.”
+
+
+9. Asset Placement Rules untuk High-Fidelity
+Brand shell: App Icon digunakan pada sidebar compact dan header identity; Logo Utama digunakan pada Login dan brand documentation. Jangan menampilkan logo lockup penuh berulang di setiap content card.
+Success illustration: Dokumen Siap Diunduh hanya untuk HF09/success states.
+Admin illustration: Verifikasi Admin hanya untuk empty/onboarding/review admin state; jangan mengganggu tabel operasional.
+Citizen assets: Banner Landing Page dan Ilustrasi Pengajuan Surat Online disimpan untuk Future Citizen Portal/roadmap dan materi proposal, bukan sebagai fitur aktif operator v1.
+PDF area: tidak diberi decorative illustration agar fidelity dokumen tetap menjadi fokus.
+
+
+10. Component Usage Mapping
+HF07: Dialog + SummaryList + PrimaryButton + SecondaryButton.
+HF08: StatusBadge + ProcessingCard + Spinner + Alert.
+HF09: SuccessCard + Illustration + LetterSummary + ActionButtons.
+HF10: RecoveryCard + StatusBadge + RetryButton + ErrorReference.
+HF11: PageHeader + SearchInput + FilterBar + DataTable + Pagination + StatusBadge.
+HF12: PDFViewer + MetadataCard + SnapshotCard + AuditTimeline + ActionMenu.
+HF13: SearchInput + DataTable + Pagination + EmptyState.
+HF14: FormSection + Input + Select + DatePicker + Textarea + ValidationSummary.
+HF15: VersionTable + FileUpload + TemplateValidationPanel + StatusBadge.
+HF16: Tabs + FormSection + DataTable + StatusBadge + ConfirmationDialog.
+
+
+11. Figma Continuation Checklist
+Saat Figma MCP tersedia kembali: (1) upload assets ke file, (2) replace brand placeholder HF01/HF02 dengan Logo/App Icon, (3) buat HF07–HF16 menggunakan semantic tokens yang sudah ada, (4) masukkan success/admin illustration sesuai mapping, (5) screenshot QA setiap 3–4 screen, (6) perbaiki overflow/spacing, (7) validasi visual states Draft/Diproses/Terbit/Dibatalkan, (8) dokumentasikan node IDs untuk handoff development.

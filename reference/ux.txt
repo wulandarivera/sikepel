@@ -1,0 +1,805 @@
+﻿SIKEPEL v1 — UI/UX Specification, Sitemap & Screen-by-Screen Requirements
+Sistem Informasi Pelayanan Kelurahan
+Version 1.0 — Prototype Cloud Multi-Kelurahan
+
+
+1. Tujuan Dokumen
+Dokumen ini menerjemahkan PRD dan Technical & Functional Specification SIKEPEL v1 menjadi panduan implementasi antarmuka. Fokusnya adalah informasi yang harus terlihat, tindakan yang boleh dilakukan tiap role, alur navigasi, state antarmuka, validasi, dan acceptance requirement pada setiap screen.
+
+
+Dokumen ini tidak menetapkan visual brand final kecamatan. Ia menetapkan baseline UI/UX yang konsisten, sederhana, aman, dan mudah diimplementasikan menggunakan Next.js + Tailwind CSS + shadcn/ui.
+
+
+2. Sasaran UX
+UX-OBJ-01 Operator dapat memulai pelayanan baru dari dashboard dengan satu aksi utama.
+UX-OBJ-02 Operator dapat menyelesaikan surat standar tanpa membuka Excel atau Word.
+UX-OBJ-03 Data yang berasal dari master penduduk terlihat jelas dan dapat diperiksa sebelum penerbitan.
+UX-OBJ-04 Penerbitan surat merupakan aksi sadar: user mengetahui bahwa nomor resmi akan dialokasikan.
+UX-OBJ-05 Sistem menjelaskan status proses dan error dengan bahasa operasional, bukan istilah teknis.
+UX-OBJ-06 Menu, data, dan tindakan mengikuti role serta tenant pengguna.
+UX-OBJ-07 Cetak ulang surat lama mudah ditemukan dan tidak membuat nomor baru.
+UX-OBJ-08 Konfigurasi global dan konfigurasi kelurahan dipisahkan agar tidak membingungkan.
+UX-OBJ-09 Desktop/laptop menjadi prioritas utama, tetapi layout tetap responsif pada tablet/mobile.
+UX-OBJ-10 Tidak ada data warga atau PDF yang menjadi publik hanya karena URL diketahui.
+
+
+3. Prinsip Desain Pengalaman
+P-UX-01 Satu tugas utama per layar. Layar pelayanan memandu operator secara bertahap.
+P-UX-02 Progressive disclosure. Konfigurasi teknis hanya muncul untuk role admin yang relevan.
+P-UX-03 Tenant by session. Operator tidak memilih kelurahan saat membuat surat.
+P-UX-04 Safe defaults. Draft tidak mendapat nomor; tombol berisiko memerlukan konfirmasi.
+P-UX-05 Historical integrity. Detail surat terbit menampilkan snapshot, bukan master terbaru.
+P-UX-06 Recoverable errors. Kegagalan converter atau storage mempunyai retry tanpa membuat record/nomor baru.
+P-UX-07 Consistent status language. Gunakan Draft, Diproses, Terbit, Dibatalkan.
+P-UX-08 Search-first. Penduduk dan arsip harus mudah ditemukan dari search utama.
+P-UX-09 Form clarity. Label menggunakan Bahasa Indonesia; istilah internal seperti tenant_id tidak ditampilkan.
+P-UX-10 No silent mutation. Perubahan pejabat, template, counter, dan status surat harus memberikan feedback serta audit trail.
+
+
+4. Information Architecture
+Aplikasi dibagi menjadi tiga lapis:
+Lapisan Operasional: Dashboard, Pelayanan, Penduduk, Arsip.
+Lapisan Administrasi Kelurahan: Profil Kelurahan, Pejabat, Pengguna tenant, konfigurasi lokal yang diizinkan.
+Lapisan Administrasi Kecamatan: Kelurahan, Jenis Surat, Template Global, konfigurasi lintas tenant, laporan agregat.
+
+
+Global App Shell:
+Sidebar kiri: navigasi utama berdasarkan role.
+Top bar: judul halaman, identitas kelurahan/scope, user menu.
+Content area: halaman aktif.
+Optional right panel/modal: preview, confirmation, detail ringkas.
+Toast area: feedback sukses/error non-blocking.
+Dialog: konfirmasi aksi destruktif atau penerbitan resmi.
+
+
+5. Role-Based Navigation
+Operator:
+Dashboard
+Buat Pelayanan
+Penduduk
+Arsip Surat
+Profil Saya
+
+
+Admin Kelurahan:
+Dashboard
+Pelayanan
+Penduduk
+Arsip Surat
+Pejabat
+Pengguna
+Profil Kelurahan
+Audit Log
+Laporan
+Profil Saya
+
+
+Pimpinan:
+Dashboard
+Arsip Surat
+Laporan
+Profil Saya
+
+
+Super Admin Kecamatan:
+Dashboard Kecamatan
+Kelurahan
+Jenis Surat
+Template Global
+Pengguna
+Audit Log
+Laporan Kecamatan
+Pengaturan Global
+Profil Saya
+
+
+6. Sitemap
+/public
+  /login
+
+
+/app
+  /dashboard
+
+
+  /pelayanan
+    /baru
+      /jenis-surat
+      /penduduk
+      /penduduk/baru
+      /form
+      /preview
+      /terbit
+    /draft/[letterId]
+    /pending/[letterId]
+
+
+  /penduduk
+    /[residentId]
+    /[residentId]/edit
+    /[residentId]/riwayat
+
+
+  /arsip
+    /[letterId]
+
+
+  /kelurahan
+    /[villageId]
+    /[villageId]/edit
+
+
+  /pejabat
+    /baru
+    /[officialId]
+    /[officialId]/edit
+
+
+  /jenis-surat
+    /baru
+    /[letterTypeId]
+    /[letterTypeId]/form
+    /[letterTypeId]/template
+
+
+  /template
+    /[templateId]
+    /[templateId]/validasi
+
+
+  /pengguna
+    /baru
+    /[userId]
+    /[userId]/edit
+
+
+  /audit
+  /laporan
+  /pengaturan
+  /profil
+
+
+7. Route & Permission Rules
+ROUTE-01 Semua /app/* membutuhkan session valid.
+ROUTE-02 Operator hanya dapat mengakses data village_id miliknya.
+ROUTE-03 Admin Kelurahan hanya dapat mengakses konfigurasi tenant miliknya.
+ROUTE-04 Pimpinan default read-only.
+ROUTE-05 Super Admin dapat memilih scope tenant hanya melalui kontrol administratif yang eksplisit.
+ROUTE-06 Direct URL ke resource tenant lain harus menghasilkan 403/Not Authorized, bukan sekadar menyembunyikan data.
+ROUTE-07 Resource yang tidak ada menghasilkan 404 yang berbeda dari 403.
+ROUTE-08 Setelah session kedaluwarsa, user diarahkan ke Login dan form yang belum tersimpan tidak boleh diam-diam diterbitkan.
+
+
+8. Core User Flows
+Flow A — Penduduk sudah ada:
+Dashboard → Buat Pelayanan → Pilih Jenis Surat → Cari Penduduk → Pilih Penduduk → Isi Data Surat → Preview → Konfirmasi Terbitkan → Diproses → PDF Final.
+
+
+Flow B — Penduduk belum ada:
+Buat Pelayanan → Pilih Jenis Surat → Cari Penduduk → Tidak Ditemukan → Tambah Penduduk → Simpan & Lanjutkan → Isi Data Surat → Preview → Terbitkan.
+
+
+Flow C — Cetak ulang:
+Arsip → Cari NIK/Nama/Nomor → Buka Detail Surat → Lihat PDF → Print/Download. Tidak ada nomor baru.
+
+
+Flow D — Gagal konversi:
+Terbitkan → Nomor dialokasikan → Status Diproses → Converter gagal → layar Pending menampilkan alasan aman + tombol Coba Lagi → retry idempotent → Terbit.
+
+
+Flow E — Update template:
+Super Admin → Jenis Surat → Template → Upload versi baru → Validasi → Aktivasi → surat baru menggunakan versi baru; surat lama tetap menggunakan snapshot/version historis.
+
+
+9. Layout Specification
+9.1 Desktop
+Lebar sidebar: sekitar 240–280 px.
+Content maksimum: 1440 px dengan area kerja fleksibel.
+Header halaman berisi breadcrumb opsional, title, description singkat, dan primary action.
+Form panjang menggunakan dua kolom hanya jika field pendek dan hubungan jelas; field alamat/keperluan tetap full width.
+Table menggunakan sticky header bila dataset panjang.
+Preview PDF idealnya tampil side-by-side atau full-screen viewer pada layar besar.
+
+
+9.2 Tablet/Mobile
+Sidebar berubah menjadi drawer.
+Table dapat menjadi horizontal scroll atau card list untuk data inti.
+Primary action tetap terlihat tanpa menutupi konten.
+Flow pelayanan tetap berurutan dan tidak memerlukan hover.
+PDF preview boleh membuka full-screen viewer.
+
+
+10. Design System Baseline
+10.1 Typography
+Font UI: Inter atau system sans-serif.
+Hierarchy: Page Title, Section Title, Card Title, Body, Caption.
+Label form selalu terlihat; jangan mengandalkan placeholder sebagai label.
+
+
+10.2 Color Semantics
+Primary: aksi utama dan navigasi aktif.
+Success: Terbit/Sukses.
+Warning: Draft, perubahan yang perlu perhatian.
+Danger: Batal, Void, deactivate.
+Info/Neutral: metadata dan bantuan.
+Warna tidak boleh menjadi satu-satunya pembeda status; selalu sertai text/icon.
+
+
+10.3 Core Components
+AppShell
+SidebarNav
+TopBar
+PageHeader
+SearchInput
+DataTable
+FilterBar
+Pagination
+StatusBadge
+StatCard
+EmptyState
+Skeleton
+FormField
+DatePicker
+Select/Combobox
+CurrencyInput
+Textarea
+ConfirmationDialog
+AlertDialog
+Toast
+PDFViewer
+StepIndicator
+ResidentSummaryCard
+LetterSummaryCard
+AuditTimeline
+FileUpload
+TemplateValidationPanel
+
+
+10.4 Status Badges
+DRAFT → “Draft”
+PREVIEW → “Pratinjau”
+ISSUE_PENDING/GENERATING → “Diproses”
+ISSUED → “Terbit”
+VOID/CANCELLED → “Dibatalkan”
+INACTIVE user/template/official → “Nonaktif”
+
+
+11. Form & Validation Patterns
+FORM-UX-01 Error tampil di dekat field dan ringkasan error di bagian atas ketika submit gagal.
+FORM-UX-02 NIK menggunakan numeric input behavior tetapi disimpan sebagai string; panjang 16 digit.
+FORM-UX-03 Nomor KK juga tidak diperlakukan sebagai angka matematika.
+FORM-UX-04 Tanggal menggunakan date picker dengan format tampilan Indonesia.
+FORM-UX-05 Field otomatis dari penduduk diberi indikator “Dari Data Penduduk”.
+FORM-UX-06 Field yang boleh berbeda untuk surat tetap editable bila requirement surat mengizinkan.
+FORM-UX-07 Tombol Simpan Draft tidak memerlukan seluruh field wajib final.
+FORM-UX-08 Preview memerlukan data minimum agar template dapat dirender.
+FORM-UX-09 Terbitkan memerlukan seluruh validasi final lulus.
+FORM-UX-10 Double-click pada submit tidak menghasilkan request ganda.
+FORM-UX-11 Form unsaved yang ditinggalkan menampilkan konfirmasi bila ada perubahan penting.
+
+
+12. Feedback, Loading, Empty & Error States
+Loading:
+Gunakan skeleton untuk dashboard/list.
+Gunakan spinner/progress text untuk proses generate PDF.
+Jangan men-disable seluruh halaman untuk loading lokal.
+
+
+Empty:
+Penduduk kosong → jelaskan belum ada data dan CTA Tambah Penduduk.
+Arsip kosong → jelaskan belum ada surat pada filter tersebut.
+Template belum ada → CTA Upload Template.
+Pejabat belum ada → CTA Tambah Pejabat.
+
+
+Error:
+Error form → spesifik pada field.
+Error network → “Tidak dapat terhubung. Periksa koneksi lalu coba lagi.”
+Error converter → “PDF belum berhasil dibuat. Nomor surat tetap tersimpan. Coba Lagi.”
+403 → “Anda tidak memiliki akses ke data ini.”
+404 → “Data tidak ditemukan atau sudah tidak tersedia.”
+Unexpected → tampilkan reference/error ID, bukan stack trace.
+
+
+13. Accessibility Requirements
+A11Y-01 Semua input mempunyai label terasosiasi.
+A11Y-02 Focus state terlihat.
+A11Y-03 Navigasi utama dapat digunakan keyboard.
+A11Y-04 Dialog mengunci focus dan kembali ke trigger setelah ditutup.
+A11Y-05 Contrast text dan control mengikuti standar aksesibilitas modern.
+A11Y-06 Icon-only button mempunyai accessible name/tooltip.
+A11Y-07 Error tidak hanya disampaikan dengan warna.
+A11Y-08 Table mempunyai header semantik.
+A11Y-09 PDF viewer menyediakan tombol Download sebagai alternatif bila viewer tidak kompatibel.
+A11Y-10 Session timeout message dapat dibaca screen reader.
+
+
+14. Screen-by-Screen Requirements
+
+
+SCR-01 — Login
+Route: /login
+Role: Publik.
+Tujuan: mengautentikasi pengguna dan mengarahkan ke scope yang benar.
+Konten utama: logo/nama SIKEPEL, username/email, password, tombol Masuk.
+Primary action: Masuk.
+Behavior: setelah login sukses arahkan ke dashboard sesuai role. Jangan menampilkan pilihan kelurahan untuk operator.
+Validation: field wajib; credential salah menggunakan pesan generik.
+States: loading pada tombol, error credential, error network, session expired message.
+Acceptance: user nonaktif tidak dapat masuk; user valid masuk ke tenant/role yang benar.
+
+
+SCR-02 — Dashboard Operator/Admin Kelurahan
+Route: /app/dashboard
+Role: Operator, Admin Kelurahan.
+Tujuan: memulai pelayanan dan melihat kondisi operasional tenant.
+Konten: CTA “Buat Pelayanan”, jumlah surat hari ini/bulan ini, draft/pending, surat terbaru, shortcut Penduduk/Arsip.
+Primary action: Buat Pelayanan.
+Behavior: statistik hanya tenant aktif.
+Empty: belum ada pelayanan → fokus pada CTA pertama.
+Acceptance: dashboard tidak menampilkan data tenant lain.
+
+
+SCR-03 — Dashboard Kecamatan
+Route: /app/dashboard
+Role: Super Admin.
+Tujuan: melihat ringkasan lintas kelurahan.
+Konten: jumlah kelurahan aktif, surat hari ini per kelurahan, template/jenis surat bermasalah, aktivitas terbaru.
+Action: Kelola Kelurahan, Jenis Surat, Template.
+Behavior: agregat menghindari menampilkan PII yang tidak diperlukan.
+Acceptance: super admin dapat berpindah scope melalui kontrol administratif yang jelas.
+
+
+SCR-04 — Pilih Jenis Surat
+Route: /app/pelayanan/baru/jenis-surat
+Role: Operator, Admin Kelurahan sesuai kebijakan.
+Tujuan: memulai workflow dengan memilih layanan.
+Konten: search jenis surat, kategori opsional, card/list nama surat, deskripsi singkat.
+Action: Pilih dan Lanjutkan.
+Behavior: hanya jenis surat aktif dengan template aktif yang dapat dipilih.
+Disabled state: jenis surat tanpa template/konfigurasi valid ditandai “Belum Siap” dan tidak dapat diterbitkan.
+Acceptance: pilihan tersimpan ke draft/wizard state.
+
+
+SCR-05 — Cari/Pilih Penduduk
+Route: /app/pelayanan/baru/penduduk
+Role: Operator.
+Tujuan: memilih penduduk yang akan dibuatkan surat.
+Konten: search NIK/nama, hasil kandidat, NIK masked sebagian bila diperlukan, nama, alamat ringkas.
+Action: Pilih Penduduk; Tambah Penduduk & Lanjutkan.
+Behavior: pencarian hanya tenant; debounce search; exact NIK diprioritaskan.
+Empty: “Data tidak ditemukan” + CTA tambah.
+Acceptance: user tidak dapat memilih record tenant lain walau mengubah request.
+
+
+SCR-06 — Tambah Penduduk dari Flow Pelayanan
+Route: /app/pelayanan/baru/penduduk/baru
+Role: Operator.
+Tujuan: menyimpan warga baru tanpa keluar dari alur.
+Konten minimum: NIK, No KK, nama, tempat/tanggal lahir, jenis kelamin, agama, status perkawinan, pekerjaan, alamat, RT, RW.
+Primary action: Simpan & Lanjutkan Pelayanan.
+Secondary: Batal/Kembali.
+Validation: NIK 16 digit; warning/blocked duplicate sesuai kebijakan.
+Behavior: setelah sukses, resident baru otomatis terpilih.
+Acceptance: tidak perlu memulai workflow surat dari awal.
+
+
+SCR-07 — Form Pelayanan Dinamis
+Route: /app/pelayanan/baru/form atau /app/pelayanan/draft/[id]
+Role: Operator.
+Tujuan: melengkapi data khusus surat.
+Konten: ringkasan penduduk, section Data Surat, field dinamis, section Penandatangan bila dapat dipilih, metadata kelurahan read-only.
+Actions: Simpan Draft, Preview, Kembali.
+Behavior: field umum auto-fill dari resident; perubahan di form surat tidak selalu mengubah master kecuali aksi Update Data Penduduk dipilih terpisah.
+Validation: sesuai konfigurasi field.
+Acceptance: template/field tidak valid mencegah preview/issue dengan pesan jelas.
+
+
+SCR-08 — Preview Surat
+Route: /app/pelayanan/baru/preview
+Role: Operator.
+Tujuan: memeriksa hasil sebelum nomor resmi dialokasikan.
+Konten: PDF viewer draft, ringkasan data, badge “Pratinjau — Belum Terbit”.
+Actions: Kembali & Perbaiki, Terbitkan Surat.
+Behavior: preview menggunakan pipeline render yang sama dengan final; nomor final belum dikunci.
+Acceptance: user jelas memahami bahwa preview bukan dokumen resmi.
+
+
+SCR-09 — Konfirmasi Terbitkan
+Komponen: modal/dialog dari Preview/Form.
+Role: Operator dengan permission issue.
+Tujuan: mencegah penerbitan tidak sengaja.
+Konten: jenis surat, nama penduduk, pejabat, pesan “Nomor resmi akan dialokasikan setelah konfirmasi.”
+Primary: Terbitkan.
+Secondary: Batal.
+Behavior: tombol primary disable setelah klik pertama.
+Acceptance: request memiliki idempotency key/guard terhadap double submit.
+
+
+SCR-10 — Processing / Issue Pending
+Route: /app/pelayanan/pending/[letterId]
+Role: Operator/Admin.
+Tujuan: menunjukkan bahwa nomor sudah dialokasikan dan finalisasi dokumen sedang berjalan.
+Konten: nomor surat, status Diproses, progress text, waktu mulai, pesan jangan mengulang penerbitan.
+Success: redirect/detail final.
+Failure: tampilkan “PDF belum berhasil dibuat. Nomor tetap tersimpan.” + Coba Lagi.
+Acceptance: retry tidak membuat nomor/letter baru.
+
+
+SCR-11 — Hasil Surat Terbit
+Route: /app/arsip/[letterId] setelah sukses.
+Role: Operator/Admin/Pimpinan sesuai scope.
+Tujuan: menyelesaikan pelayanan.
+Konten: badge Terbit, nomor, tanggal, nama penduduk, jenis surat, penandatangan, PDF viewer.
+Actions: Print, Download PDF, Kembali ke Dashboard, Buat Pelayanan Baru.
+Acceptance: PDF final private dan hanya diakses setelah authorization.
+
+
+SCR-12 — Daftar Penduduk
+Route: /app/penduduk
+Role: Operator/Admin Kelurahan.
+Tujuan: menemukan dan mengelola master penduduk lokal.
+Konten: search, filter minimal, table nama/NIK/alamat/updated_at, pagination.
+Actions: Tambah Penduduk, Buka Detail.
+Empty: CTA tambah.
+Acceptance: pencarian terisolasi tenant dan tetap responsif.
+
+
+SCR-13 — Detail Penduduk
+Route: /app/penduduk/[residentId]
+Role: Operator/Admin.
+Tujuan: melihat master dan riwayat pelayanan.
+Konten: identitas, alamat, metadata input, last updated, riwayat surat ringkas.
+Actions: Edit Data, Buat Surat untuk Penduduk Ini, Lihat Riwayat.
+Acceptance: detail tidak mengklaim “terverifikasi Dukcapil”.
+
+
+SCR-14 — Edit Penduduk
+Route: /app/penduduk/[residentId]/edit
+Role: Operator/Admin sesuai permission.
+Tujuan: memperbarui master data.
+Konten: form data resident.
+Warning: “Perubahan ini tidak mengubah surat yang sudah terbit.”
+Actions: Simpan Perubahan, Batal.
+Acceptance: setelah save, surat historis tetap menggunakan snapshot.
+
+
+SCR-15 — Arsip Surat
+Route: /app/arsip
+Role: Operator/Admin/Pimpinan.
+Tujuan: mencari surat lama.
+Konten: search nomor/NIK/nama, filter jenis surat/tanggal/status, table nomor, jenis, penduduk, tanggal, status.
+Action: Buka Detail.
+Empty state: tidak ada hasil untuk filter.
+Acceptance: filter tenant diterapkan server-side.
+
+
+SCR-16 — Detail Arsip Surat
+Route: /app/arsip/[letterId]
+Role: sesuai scope.
+Tujuan: melihat record final/historis.
+Konten: metadata surat, snapshot penduduk, snapshot pejabat, template version, timeline audit ringkas, PDF.
+Actions: Download, Print, Void/Cancel bila role diizinkan.
+Behavior: ISSUED tidak menyediakan Edit.
+Acceptance: cetak ulang tidak membuat sequence baru.
+
+
+SCR-17 — Void/Cancel Surat
+Komponen: dialog dari detail arsip.
+Role: role khusus sesuai kebijakan.
+Tujuan: membatalkan surat dengan jejak audit.
+Konten: nomor, alasan wajib, warning bahwa nomor tidak digunakan ulang otomatis.
+Actions: Konfirmasi Batalkan, Kembali.
+Acceptance: status berubah tetapi record dan nomor tetap ada.
+
+
+SCR-18 — Daftar Kelurahan
+Route: /app/kelurahan
+Role: Super Admin.
+Tujuan: mengelola tenant.
+Konten: list nama, status, kode, jumlah user/aktivitas ringkas.
+Actions: Tambah Kelurahan, Buka.
+Acceptance: kelurahan nonaktif tidak menerima pelayanan baru.
+
+
+SCR-19 — Detail/Edit Kelurahan
+Route: /app/kelurahan/[villageId], /edit
+Role: Super Admin; Admin Kelurahan untuk profil tenant sendiri bila diizinkan.
+Tujuan: mengelola identitas yang akan masuk ke placeholder kop.
+Konten: nama, kecamatan, kabupaten/kota, alamat, telepon, email, kode pos, kode kelurahan, logo/aset.
+Actions: Simpan, Nonaktifkan/aktifkan.
+Validation: field yang dipakai template wajib tersedia.
+Acceptance: perubahan hanya memengaruhi surat baru, bukan snapshot lama.
+
+
+SCR-20 — Daftar Pejabat
+Route: /app/pejabat
+Role: Admin Kelurahan, Super Admin.
+Tujuan: mengelola penandatangan tenant.
+Konten: nama, NIP, jabatan, periode, status aktif.
+Actions: Tambah Pejabat, Edit, Aktifkan/Nonaktifkan.
+Acceptance: operator tidak memiliki menu ini.
+
+
+SCR-21 — Tambah/Edit Pejabat
+Route: /app/pejabat/baru, /app/pejabat/[id]/edit
+Role: Admin Kelurahan/Super Admin.
+Konten: nama, NIP, jabatan, tanggal mulai/akhir, status, jenis surat yang dapat ditandatangani bila fitur diaktifkan.
+Actions: Simpan.
+Warning: perubahan pejabat tidak mengubah surat terbit lama.
+Acceptance: satu pejabat aktif dapat dipilih sesuai aturan surat.
+
+
+SCR-22 — Daftar Jenis Surat
+Route: /app/jenis-surat
+Role: Super Admin.
+Tujuan: mengelola katalog layanan global.
+Konten: nama surat, kode, status, template aktif, jumlah field, readiness.
+Actions: Tambah Jenis Surat, Buka Konfigurasi.
+Acceptance: status readiness menunjukkan masalah form/template.
+
+
+SCR-23 — Detail Jenis Surat & Form Builder
+Route: /app/jenis-surat/[id], /app/jenis-surat/[id]/form
+Role: Super Admin.
+Tujuan: menentukan metadata dan field dinamis.
+Konten: nama, kode, aturan numbering reference, daftar field, tipe, required, placeholder key, urutan.
+Actions: Tambah Field, Edit, Reorder, Simpan.
+Behavior: perubahan tidak mengubah snapshot surat lama.
+Acceptance: duplicate placeholder key ditolak.
+
+
+SCR-24 — Template Versions
+Route: /app/jenis-surat/[id]/template
+Role: Super Admin.
+Tujuan: mengelola template global per jenis surat.
+Konten: versi, tanggal upload, status aktif, uploader, hasil validasi.
+Actions: Upload Versi Baru, Validasi, Preview Test, Aktifkan, Archive.
+Acceptance: hanya satu versi aktif; template yang direferensikan surat lama tidak dihapus destruktif.
+
+
+SCR-25 — Upload & Validasi Template
+Route: /app/template/[id]/validasi atau flow upload.
+Role: Super Admin.
+Konten: dropzone DOCX, daftar placeholder ditemukan, placeholder valid/tidak dikenal/hilang, error parsing.
+Actions: Simpan Versi, Aktifkan bila valid.
+Behavior: file invalid tidak dapat aktif.
+Acceptance: placeholder di header/footer/body/tabel dipindai sejauh engine mendukung.
+
+
+SCR-26 — Daftar Pengguna
+Route: /app/pengguna
+Role: Super Admin dan Admin Kelurahan untuk tenant sendiri.
+Tujuan: mengelola akun.
+Konten: nama, username/email, role, kelurahan, status, last login opsional.
+Actions: Tambah, Edit, Nonaktifkan.
+Acceptance: Admin Kelurahan tidak dapat membuat Super Admin atau mengelola tenant lain.
+
+
+SCR-27 — Tambah/Edit Pengguna
+Route: /app/pengguna/baru, /app/pengguna/[id]/edit
+Role: sesuai permission.
+Konten: identitas, login identifier, role yang diizinkan, tenant, status.
+Actions: Simpan.
+Validation: kombinasi role/tenant harus valid.
+Acceptance: perubahan role efektif pada session berikutnya atau sesuai kebijakan session revocation.
+
+
+SCR-28 — Audit Log
+Route: /app/audit
+Role: Admin Kelurahan, Super Admin.
+Tujuan: menelusuri tindakan penting.
+Konten: waktu, actor, aksi, target, tenant, status, filter.
+Action: Buka Detail Event.
+Behavior: jangan tampilkan payload PII berlebihan.
+Acceptance: operator biasa tidak dapat mengubah audit log.
+
+
+SCR-29 — Laporan Operasional
+Route: /app/laporan
+Role: Admin/Pimpinan/Super Admin sesuai scope.
+Tujuan: melihat volume pelayanan.
+Konten v1: jumlah surat per periode, per jenis, status, per kelurahan bagi Super Admin.
+Actions: Filter, Export sederhana bila diaktifkan.
+Behavior: bukan BI penuh.
+Acceptance: agregasi menghormati scope.
+
+
+SCR-30 — Pengaturan Global/Numbering
+Route: /app/pengaturan
+Role: Super Admin atau role khusus.
+Tujuan: mengelola konfigurasi yang berisiko.
+Konten: format nomor, sequence scope, fallback, system options.
+Actions: Simpan Perubahan.
+Safety: konfirmasi + alasan audit untuk perubahan counter/manual sequence.
+Acceptance: operator tidak dapat mengakses halaman ini.
+
+
+SCR-31 — Profil Saya
+Route: /app/profil
+Role: Semua user login.
+Tujuan: melihat informasi akun dan tenant.
+Konten: nama, role, kelurahan/scope, identifier login.
+Actions: Logout; ubah profil terbatas bila didukung.
+Acceptance: user tidak dapat mengubah role/tenant sendiri.
+
+
+15. Global Interaction Requirements
+INT-01 Breadcrumb digunakan untuk halaman administratif bertingkat; tidak wajib pada flow wizard pelayanan.
+INT-02 Wizard pelayanan menggunakan Step Indicator: Jenis Surat → Penduduk → Form → Preview → Terbit.
+INT-03 Kembali pada wizard mempertahankan data draft.
+INT-04 Refresh browser pada draft tidak menghilangkan draft yang sudah disimpan.
+INT-05 Refresh saat ISSUE_PENDING menampilkan status terbaru dari server, bukan memulai penerbitan baru.
+INT-06 Search field menggunakan clear button dan keyboard Enter.
+INT-07 Filter aktif terlihat dan dapat di-reset.
+INT-08 Table sort hanya tersedia pada kolom yang benar-benar didukung backend.
+INT-09 Tanggal/waktu ditampilkan dengan zona waktu operasional.
+INT-10 Destructive action menggunakan confirmation dialog dengan nama target.
+
+
+16. Copywriting & Terminology
+Gunakan:
+“Buat Pelayanan”
+“Data Penduduk”
+“Jenis Surat”
+“Pratinjau”
+“Terbitkan Surat”
+“Diproses”
+“Terbit”
+“Dibatalkan”
+“Cetak Ulang”
+“Coba Lagi”
+“Data dari pelayanan lokal”
+
+
+Hindari:
+“Mail Merge”
+“tenant_id”
+“row”
+“database record”
+“service role”
+“verified Dukcapil” jika tidak terintegrasi
+“generate object” atau istilah teknis lain pada UI operator.
+
+
+17. Responsive Priority
+Priority 1: 1366×768 dan laptop kantor umum.
+Priority 2: 1920×1080.
+Priority 3: tablet landscape/portrait.
+Priority 4: mobile.
+Tidak ada fungsi inti yang hanya tersedia di hover atau membutuhkan mouse presisi tinggi.
+
+
+18. UX Acceptance Criteria
+UX-AC-01 Operator dapat menuju form pelayanan dalam maksimal tiga langkah setelah dashboard bila penduduk sudah diketahui.
+UX-AC-02 Operator dapat menambah penduduk baru tanpa keluar dari workflow.
+UX-AC-03 User selalu dapat membedakan Draft, Diproses, Terbit, dan Dibatalkan.
+UX-AC-04 User tidak dapat menerbitkan dua kali akibat double-click.
+UX-AC-05 Kegagalan converter tidak menyarankan membuat surat dari awal.
+UX-AC-06 Cetak ulang memiliki jalur yang jelas dari Arsip.
+UX-AC-07 Template dan konfigurasi global tidak muncul untuk Operator.
+UX-AC-08 Admin Kelurahan tidak melihat pengaturan tenant lain.
+UX-AC-09 ISSUED tidak mempunyai tombol Edit.
+UX-AC-10 Setiap screen mempunyai loading, empty, error, permission, dan success feedback yang sesuai konteks.
+UX-AC-11 Direct URL resource tenant lain menghasilkan akses ditolak.
+UX-AC-12 PDF final tidak dapat dibuka secara publik tanpa authorization/signed access.
+UX-AC-13 Form error fokus atau scroll ke error pertama setelah submit gagal.
+UX-AC-14 Sistem tetap dapat digunakan sepenuhnya dengan keyboard untuk flow utama.
+UX-AC-15 Operator dapat memahami UI tanpa harus mengetahui konsep Mail Merge, database, atau Gotenberg.
+
+
+19. Screen Delivery Priority
+P0 — Demo inti:
+SCR-01 Login
+SCR-02 Dashboard
+SCR-04 Pilih Jenis Surat
+SCR-05 Cari Penduduk
+SCR-06 Tambah Penduduk
+SCR-07 Form Pelayanan
+SCR-08 Preview
+SCR-09 Konfirmasi Terbit
+SCR-10 Processing/Pending
+SCR-11 Hasil Terbit
+SCR-12 Daftar Penduduk
+SCR-13 Detail Penduduk
+SCR-15 Arsip
+SCR-16 Detail Arsip
+
+
+P1 — Pilot terbatas:
+SCR-14 Edit Penduduk
+SCR-17 Void/Cancel
+SCR-19 Profil Kelurahan
+SCR-20/21 Pejabat
+SCR-26/27 Pengguna
+SCR-28 Audit
+SCR-31 Profil Saya
+
+
+P1 Admin Kecamatan:
+SCR-03 Dashboard Kecamatan
+SCR-18 Kelurahan
+SCR-22 Jenis Surat
+SCR-23 Form Builder
+SCR-24 Template Versions
+SCR-25 Upload/Validasi Template
+SCR-30 Pengaturan
+
+
+P2:
+SCR-29 Laporan operasional dan export polish.
+
+
+20. Wireframe Guidance
+Dashboard:
+Sidebar | TopBar
+Page title + CTA Buat Pelayanan
+Stat cards
+Surat terbaru
+Draft/Pending attention panel
+
+
+Flow Pelayanan:
+Step Indicator
+Main form area
+Sticky action bar bawah: Kembali | Simpan Draft | Preview
+Pada preview: viewer dominan + summary + Terbitkan
+
+
+List Screen:
+PageHeader + Primary CTA
+Search + FilterBar
+DataTable
+Pagination
+EmptyState bila kosong
+
+
+Detail Screen:
+Header + status + actions
+Summary cards
+Main detail sections
+Timeline/audit section jika relevan
+Document viewer untuk surat
+
+
+Admin Configuration:
+PageHeader
+Tabs bila satu entity memiliki Metadata | Form | Template | Audit
+Save action tetap konsisten pada kanan atas/bawah.
+
+
+21. Handoff Requirements untuk Development
+DEV-UX-01 Setiap screen memiliki route, permission guard, loading.tsx/error boundary bila relevan.
+DEV-UX-02 Komponen reusable tidak mengandung business rule tenant.
+DEV-UX-03 Form schema berasal dari konfigurasi server, divalidasi ulang server-side.
+DEV-UX-04 Status badge menggunakan enum terpusat.
+DEV-UX-05 Toast hanya untuk feedback singkat; error kritis tetap terlihat di halaman/dialog.
+DEV-UX-06 PDF viewer tidak menjadi sumber authorization.
+DEV-UX-07 Search/filter state sebaiknya tersimpan pada URL query untuk list utama.
+DEV-UX-08 Modals tidak digunakan untuk form panjang kecuali tambah data yang ringkas.
+DEV-UX-09 Semua destructive action menghasilkan audit event dari backend.
+DEV-UX-10 Test UI minimum mencakup role visibility, tenant isolation, draft persistence, double submit, pending retry, dan historical snapshot.
+
+
+22. Deliverables Desain Berikutnya
+Setelah dokumen ini disetujui, artifact desain yang disarankan:
+Low-fidelity wireframe untuk seluruh P0.
+High-fidelity design untuk Login, Dashboard, Wizard Pelayanan, Penduduk, Arsip, Template.
+Component inventory/design tokens.
+Prototype klik flow A, B, C, dan D.
+Responsive variants untuk desktop dan mobile.
+UI test checklist dan visual regression baseline.
+
+
+23. Definition of Ready for Coding
+UI/UX dianggap siap masuk implementasi ketika:
+Sitemap dan role navigation disetujui.
+Flow pelayanan utama disetujui.
+Semua screen P0 memiliki requirement dan state.
+Terminologi UI disepakati.
+Form field jenis surat awal tersedia.
+Hak akses tiap screen tersedia.
+Aturan penomoran dan lifecycle surat tidak memiliki konflik dengan UX.
+Template contoh dapat menghasilkan preview PDF.
+Error state converter dan retry telah disepakati.
+Developer dapat mengimplementasikan screen tanpa menebak business rule inti.

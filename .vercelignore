@@ -1,0 +1,12 @@
+.data
+.tools
+.next
+.next-vercel-check
+.git
+node_modules
+.vercel
+.env*
+reference
+test-results
+playwright-report
+*.tsbuildinfo

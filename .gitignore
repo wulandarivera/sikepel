@@ -1,0 +1,24 @@
+node_modules/
+.next/
+.next-vercel-check/
+.vercel/
+.env*
+!.env.example
+!.env.vercel.example
+.data/
+.tools/
+test-results/
+playwright-report/
+*.tsbuildinfo
+public/pdf.worker.min.mjs
+# Local backups, verification output and sensitive files
+temp_backup/
+backups/
+reference/verification/
+*.log
+/core
+/core.*
+SETUP-TOKEN.txt
+AKSES-LOKAL.txt
+*.pem
+*.key

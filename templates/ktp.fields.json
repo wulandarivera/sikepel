@@ -1,0 +1,139 @@
+[
+  {
+    "key": "jenis_permohonan",
+    "label": "Jenis permohonan KTP-el",
+    "type": "select",
+    "options": [
+      "KTP baru",
+      "Pindah datang",
+      "Penggantian hilang",
+      "Penggantian rusak",
+      "Perpanjangan ITAP",
+      "Perubahan status kewarganegaraan",
+      "Luar domisili",
+      "Transmigrasi",
+      "Perubahan data"
+    ],
+    "required": true
+  },
+  {
+    "key": "nomor_handphone",
+    "label": "Nomor handphone / WA (opsional)",
+    "type": "text",
+    "required": false
+  },
+  {
+    "key": "email",
+    "label": "Alamat email (opsional)",
+    "type": "text",
+    "required": false
+  },
+  {
+    "key": "nama_petugas",
+    "label": "Nama petugas (opsional)",
+    "type": "text",
+    "required": false
+  },
+  {
+    "key": "lampiran_kk",
+    "label": "KK lama / KK rusak",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_nikah",
+    "label": "Buku nikah / kutipan akta perkawinan",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_cerai",
+    "label": "Kutipan akta perceraian",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_pindah",
+    "label": "Surat keterangan pindah",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_pindah_ln",
+    "label": "Surat keterangan pindah luar negeri",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_ktp",
+    "label": "KTP-el rusak / KTP-el daerah asal",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_paspor",
+    "label": "Dokumen perjalanan (paspor)",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_hilang",
+    "label": "Surat keterangan hilang dari kepolisian",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_perubahan",
+    "label": "Bukti perubahan peristiwa kependudukan / peristiwa penting",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_sptjm",
+    "label": "SPTJM perkawinan / perceraian belum tercatat",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_kematian",
+    "label": "Akta kematian",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_pernyataan",
+    "label": "Pernyataan penyebab hilang atau rusak",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_perwakilan",
+    "label": "Surat keterangan pindah dari Perwakilan RI",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_keluarga",
+    "label": "Pernyataan bersedia menerima sebagai anggota keluarga",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_pengasuhan",
+    "label": "Surat kuasa pengasuhan anak dari orang tua / wali",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "lampiran_izin_tinggal",
+    "label": "Kartu izin tinggal tetap / terbatas",
+    "type": "checkbox",
+    "required": false
+  },
+  {
+    "key": "catatan",
+    "label": "Catatan petugas (tidak tercetak)",
+    "type": "textarea",
+    "required": false
+  }
+]
