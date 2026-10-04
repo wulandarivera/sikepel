@@ -30,6 +30,7 @@ import {
 import { useApp } from "./workspace";
 import { spouseDefaults } from "@/lib/spouse-form";
 import { RequirementChecklist, WhatsAppRequirements } from "./requirements";
+import { RequirementDetail } from "./requirement-detail";
 import { requirementsComplete } from "@/lib/requirements";
 import { n1StatusOptions } from "@/lib/n1";
 import { PindahMembers } from "./pindah-members";
@@ -1004,6 +1005,7 @@ function ArchiveDetail({ id, success }: { id: string; success: boolean }) {
           )
         }
       />
+      <RequirementDetail letter={l} />
       {l.status === "ISSUE_PENDING" ? (
         <Card>
           <Empty

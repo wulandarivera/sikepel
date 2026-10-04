@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "cases": [
+    "incomplete draft saved checklist and named missing documents",
+    "mobile 390px section geometry",
+    "optional missing does not imply mandatory incomplete",
+    "complete draft",
+    "issued snapshot ignores changed current config",
+    "cancelled snapshot immutable",
+    "cross-tenant detail denied",
+    "read-only leader sees historical completeness",
+    "no configuration explicitly unknown"
+  ],
+  "pageErrors": []
+}

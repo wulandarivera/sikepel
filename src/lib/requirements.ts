@@ -14,6 +14,22 @@ export function missingRequirements(requirements: Requirement[] = [], checks: Re
 export function requirementsComplete(requirements: Requirement[] = [], checks: Record<string, unknown> = {}) {
   return !missingRequirements(requirements, checks).some((r) => r.mandatory);
 }
+type RequirementDetailLetter = {
+  status: string;
+  type?: { requirements?: Requirement[] };
+  form_data?: { requirement_checks?: Record<string, unknown> };
+  snapshot?: { requirements?: Requirement[]; form_data?: { requirement_checks?: Record<string, unknown> } } | null;
+};
+export function requirementDetail(letter: RequirementDetailLetter) {
+  const draft = ["DRAFT", "PREVIEW"].includes(letter.status);
+  const requirements = (draft ? letter.type?.requirements : letter.snapshot?.requirements) || [];
+  const checks = (draft ? letter.form_data?.requirement_checks : letter.snapshot?.form_data?.requirement_checks) || {};
+  const missing = missingRequirements(requirements, checks);
+  const mandatory = requirements.filter(r => r.mandatory);
+  return { requirements, missing, completed: requirements.length - missing.length,
+    mandatoryCompleted: mandatory.length - missing.filter(r => r.mandatory).length,
+    mandatoryTotal: mandatory.length, complete: requirements.length ? requirementsComplete(requirements, checks) : null, source: draft ? "current" : "snapshot" };
+}
 export function whatsappMissing(phone: string, name: string, type: string, missing: Requirement[]) {
   let number = phone.trim().replace(/[\s()-]/g, "").replace(/^\+/, "");
   if (number.startsWith("08")) number = "62" + number.slice(1);
