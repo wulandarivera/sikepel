@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { RequirementsAdmin } from "./requirements";
 import {
   Plus,
   Pencil,
@@ -174,6 +175,7 @@ export function AdminPage({ kind }: { kind: string }) {
           )
         }
       />
+      {["kelurahan", "jenis-surat"].includes(kind) && <div style={{ marginBottom: 20 }}><RequirementsAdmin /></div>}
       {["kelurahan", "pejabat"].includes(kind) && (
         <div style={{ marginBottom: 20 }}>
           <Alert>

@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { useApp } from "./workspace";
 import { spouseDefaults } from "@/lib/spouse-form";
+import { RequirementChecklist, WhatsAppRequirements } from "./requirements";
+import { requirementsComplete } from "@/lib/requirements";
 import { n1StatusOptions } from "@/lib/n1";
 import { PindahMembers } from "./pindah-members";
 import {
@@ -301,6 +303,8 @@ function LetterForm({
     id = useRef(initial?.id);
   useUnsaved(dirty);
   const formRef = useRef<HTMLFormElement>(null);
+  const [checks, setChecks] = useState<Record<string, boolean>>(initial?.form_data.requirement_checks || {});
+  const [phone, setPhone] = useState(initial?.form_data.reporter_phone || "");
   const [statusN1, setStatusN1] = useState(String(initial?.form_data.status_n1 ?? ""));
   const partnerDefaults = type.slug === "suami-istri" ? spouseDefaults(resident, village) : {};
   const isPindah = type.slug === "pindah" && type.fields.some((f: FormField) => f.key === "no_klasifikasi_pindah");
@@ -319,7 +323,7 @@ function LetterForm({
           type_id: type.id,
           resident_id: resident.id,
           official_id,
-          form_data: isPindah ? { ...entries, anggota_pindah: JSON.parse(String(entries.anggota_pindah || "[]")) } : entries,
+          form_data: { ...entries, requirement_checks: checks, reporter_phone: phone, ...(isPindah ? { anggota_pindah: JSON.parse(String(entries.anggota_pindah || "[]")) } : {}) },
         },
         id.current ? "PATCH" : "POST",
       );
@@ -513,6 +517,12 @@ function LetterForm({
                 </Field>
               </div>
             </div>
+            <section className="stack section-gap" aria-label="Catatan Petugas">
+              <h2>Catatan Petugas</h2>
+              <RequirementChecklist requirements={type.requirements} checks={checks} onChange={next => { setChecks(next); setDirty(true); }} />
+              <Field name="reporter_phone" label="Nomor WhatsApp pelapor" hint="Opsional untuk penerbitan; wajib valid hanya saat membuka pesan WhatsApp."><input id="reporter_phone" type="tel" value={phone} onChange={e=>{setPhone(e.target.value);setDirty(true);}} /></Field>
+              <WhatsAppRequirements phone={phone} name={resident.name} type={type.name} requirements={type.requirements || []} checks={checks} />
+            </section>
             <div className="form-actions">
               <Button asChild variant="outline">
                 <Link href="/app/pelayanan/baru/jenis-surat">Batal</Link>
@@ -588,19 +598,7 @@ function Preview({ id }: { id: string }) {
         }
       />
       <Steps step={3} />
-      <div className="two-column">
-        <Card>
-          <div className="pdf-toolbar">
-            <FileText size={17} />
-            {data.type.name}
-            <span className="spacer" />
-            <Badge status="PREVIEW" />
-          </div>
-          <PDFViewer
-            title="Pratinjau PDF surat"
-            src={"/api/letters/" + id + "/pdf?preview=1"}
-          />
-        </Card>
+      <div className="requirements-preview">
         <div className="stack">
           <Alert kind="warning">
             Pratinjau — Belum Terbit. Nomor resmi belum dialokasikan.
@@ -629,7 +627,11 @@ function Preview({ id }: { id: string }) {
                   <dd>{dateID(new Date(), true)}</dd>
                 </div>
               </dl>
+              <RequirementChecklist requirements={data.type.requirements} checks={data.form_data.requirement_checks} />
+              <WhatsAppRequirements phone={data.form_data.reporter_phone || ""} name={data.resident.name} type={data.type.name} requirements={data.type.requirements || []} checks={data.form_data.requirement_checks || {}} />
+              {JSON.stringify(data.snapshot?.requirements || []) !== JSON.stringify(data.type.requirements || []) && <Alert kind="warning">Persyaratan berubah. Kembali ke form dan buat pratinjau baru.</Alert>}
               <Button
+                disabled={!requirementsComplete(data.type.requirements, data.form_data.requirement_checks) || JSON.stringify(data.snapshot?.requirements || []) !== JSON.stringify(data.type.requirements || [])}
                 className="section-gap"
                 style={{ width: "100%" }}
                 onClick={() => setConfirm(true)}
@@ -656,6 +658,10 @@ function Preview({ id }: { id: string }) {
             diubah.
           </Alert>
         </div>
+        <Card>
+          <div className="pdf-toolbar"><FileText size={17} />{data.type.name}<span className="spacer" /><Badge status="PREVIEW" /></div>
+          <PDFViewer title="Pratinjau PDF surat" src={"/api/letters/" + id + "/pdf?preview=1"} />
+        </Card>
       </div>
       <Modal
         open={confirm}

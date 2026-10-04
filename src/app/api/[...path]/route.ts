@@ -1,5 +1,6 @@
 import { optionalPasswordSchema } from "@/lib/password-policy";
 import { NextRequest, NextResponse } from "next/server";
+import { getRequirements, validateRequirements } from "@/server/requirements";
 import { randomBytes, randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
@@ -166,6 +167,24 @@ async function handle(
       await audit(db, user, "SCOPE_CHANGE", "villages", village_id || null);
       return json({ ok: true });
     }
+    if (p[0] === "types" && p[2] === "requirements" && p.length === 3) {
+      requireRoles(user, "ADMIN", "SUPER_ADMIN");
+      const scope = requireVillage(user), typeId = uuid(p[1]);
+      if (!(await one(db, "SELECT id FROM letter_types WHERE id=$1", [typeId]))) throw new AppError(404, "Jenis surat tidak ditemukan.");
+      if (method === "GET") return json({ requirements: await getRequirements(db, scope, typeId) });
+      if (method === "PATCH") {
+        const input = await req.json();
+        if (input.village_id && input.village_id !== scope) throw new AppError(403, "Kelurahan tidak sesuai lingkup aktif.");
+        const requirements = validateRequirements(input.requirements);
+        await db.transaction(async (tx) => {
+          await tx.query("SELECT id FROM letter_types WHERE id=$1 FOR UPDATE", [typeId]);
+          await tx.query("INSERT INTO settings(id,data) VALUES($1,$2) ON CONFLICT(id) DO UPDATE SET data=excluded.data", [`requirements:${scope}:${typeId}`, JSON.stringify({ requirements })]);
+          await audit(tx, user, "REQUIREMENTS_UPDATE", "letter_types", typeId);
+        });
+        return json({ requirements });
+      }
+      throw new AppError(405, "Metode tidak didukung.");
+    }
     if (route === "bootstrap" && method === "GET") {
       const [villages, types, officials, settings] = await Promise.all([
         db.query(
@@ -188,7 +207,7 @@ async function handle(
       return json({
         user: publicUser(user),
         villages: villages.rows.map(flatten),
-        types: types.rows,
+        types: await Promise.all(types.rows.map(async (type: any) => ({ ...type, requirements: user.village_id ? await getRequirements(db, user.village_id, type.id) : [] }))),
         officials: officials.rows.map(flatten),
         local: !process.env.DATABASE_URL,
         settings: settings?.data,
@@ -510,7 +529,7 @@ async function handle(
           has_companion_pdf: !!l.companion_pdf_path,
           has_preview: !!l.preview_path,
           resident: resident ? flatten(resident) : null,
-          type,
+          type: { ...type, requirements: await getRequirements(db, l.village_id, l.type_id) },
           timeline: timeline.rows,
         });
       }

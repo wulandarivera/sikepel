@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { getRequirements } from "./requirements";
+import { requirementsComplete } from "@/lib/requirements";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
@@ -75,6 +77,7 @@ async function makeSnapshot(db: DB, user: User, l: Row) {
     validatePindah(l.form_data);
   if (type.slug === "nikah" && type.fields.some((field: { key: string }) => field.key === "status_n1"))
     validateN1(l.form_data, resident.data.gender);
+  const requirements = await getRequirements(db, l.village_id, l.type_id);
   return {
     resident: flatten(resident),
     village: flatten(village),
@@ -82,6 +85,7 @@ async function makeSnapshot(db: DB, user: User, l: Row) {
     type,
     template,
     form_data: l.form_data,
+    ...(requirements.length ? { requirements } : {}),
     date: new Date().toISOString(),
   };
 }
@@ -98,6 +102,10 @@ export async function saveDraft(user: User, input: any, id?: string) {
     JSON.stringify(form).length > 40000
   )
     throw new AppError(400, "Data surat terlalu besar.");
+  if (form.requirement_checks !== undefined && (!form.requirement_checks || typeof form.requirement_checks !== "object" || Array.isArray(form.requirement_checks) || Object.values(form.requirement_checks).some(value => typeof value !== "boolean")))
+    throw new AppError(400, "Checklist persyaratan harus berisi nilai benar atau salah.");
+  if (form.reporter_phone !== undefined && (typeof form.reporter_phone !== "string" || form.reporter_phone.length > 40))
+    throw new AppError(400, "Nomor pelapor maksimal 40 karakter.");
   return db.transaction(async (tx) => {
     authorizeRow(
       user,
@@ -201,7 +209,10 @@ export async function allocateLetter(user: User, id: string) {
         409,
         "Buat dan periksa pratinjau sebelum menerbitkan.",
       );
+    await tx.query("SELECT id FROM letter_types WHERE id=$1 FOR UPDATE", [l.type_id]);
     const s = await makeSnapshot(tx, user, l);
+    if (!requirementsComplete(s.requirements, l.form_data.requirement_checks))
+      throw new AppError(400, "Persyaratan wajib belum lengkap. Lengkapi checklist Catatan Petugas.");
     const normalized = (snapshot: any) =>
       snapshot
         ? JSON.parse(

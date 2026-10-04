@@ -258,6 +258,27 @@ test(
           await post("letters/" + second.id + "/preview", {}, op);
         },
       );
+      await t.test("mandatory requirements gate direct issue API and persist checklist", async () => {
+        const requirements = [{ id: "document-a", label: "Dokumen uji", mandatory: true }, { id: "document-b", label: "Tambahan uji", mandatory: false }];
+        await post("types/" + type.id + "/requirements", { requirements }, localAdmin, "PATCH");
+        const draft = await post("letters", { type_id: type.id, resident_id: resident.id, official_id: official.id, form_data: form }, op);
+        await post("letters/" + draft.id + "/preview", {}, op);
+        assert.equal((await request("letters/" + draft.id + "/issue", "POST", {}, op)).status, 400);
+        await post("letters/" + draft.id, { type_id: type.id, resident_id: resident.id, official_id: official.id, form_data: { ...form, requirement_checks: { "document-a": true }, reporter_phone: "081234567890" } }, op, "PATCH");
+        const preview = await post("letters/" + draft.id + "/preview", {}, op);
+        assert.equal(preview.snapshot.requirements[0].id, "document-a");
+        assert.equal((await get("letters/" + draft.id, op)).form_data.requirement_checks["document-a"], true);
+        assert.equal((await request("types/" + type.id + "/requirements", "PATCH", { requirements }, op)).status, 403);
+        assert.equal((await request("types/" + type.id + "/requirements", "PATCH", { requirements, village_id: otherBoot.user.village_id }, localAdmin)).status, 403);
+        assert.deepEqual((await get("bootstrap", other)).types.find((x:any)=>x.id===type.id).requirements, []);
+        await post("types/" + type.id + "/requirements", { requirements: requirements.map(r=>({...r,label:r.label+" upraveno"})) }, localAdmin, "PATCH");
+        assert.equal((await request("letters/" + draft.id + "/issue", "POST", {}, op)).status, 409);
+        await post("letters/" + draft.id + "/preview", {}, op);
+        const allocated = await post("letters/" + draft.id + "/issue", {}, op);
+        assert.equal(allocated.status, "ISSUE_PENDING");
+        await post("types/" + type.id + "/requirements", { requirements: [] }, localAdmin, "PATCH");
+        assert.equal((await post("letters/" + draft.id + "/issue", {}, op)).number, allocated.number);
+      });
       await t.test(
         "concurrent numbering and duplicate issue are atomic and idempotent",
         async () => {
@@ -460,7 +481,7 @@ test(
             "SELECT last_sequence FROM counters WHERE village_id=$1 AND type_id=$2",
             [bootstrap.user.village_id, type.id],
           );
-          assert.equal(count.last_sequence, 2);
+          assert.equal(count.last_sequence, 3);
         },
       );
       await t.test(

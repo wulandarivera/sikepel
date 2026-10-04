@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "desktop": [
+    {
+      "x": 267,
+      "y": 281.09375,
+      "width": 392
+    },
+    {
+      "x": 683,
+      "y": 281.09375,
+      "width": 728
+    }
+  ],
+  "mobile": [
+    306.296875,
+    1249.09375
+  ],
+  "checks": [
+    "admin controls",
+    "unchecked initial requirements",
+    "disabled issue",
+    "direct API gate",
+    "WhatsApp encoding/no NIK",
+    "persisted checklist",
+    "complete enables issue",
+    "real PDF"
+  ],
+  "pageErrors": []
+}
