@@ -31,4 +31,9 @@
 - Checks reflect saved operator selections, not inspection of physical/uploaded documents. Missing historical snapshot data cannot be reconstructed; explicitly reported unknown.
 - Browser layout verified with DOM geometry, not screenshot/visual font-fidelity review. Pending and legacy absent snapshot logic covered by unit tests, not generated pending/legacy browser fixtures.
 - Revert the standalone feature commit, rebuild and restart only `pm2 restart sikepel`; no database rollback needed. Do not merge without owner approval.
-- Deployment verification recorded after restart below.
+
+## Deployment
+- Feature commit `a8dfc58` deployed using `pm2 restart sikepel` only; process ID 3 online with PID 96540.
+- `http://100.67.16.86:3000/login` returned HTTP 200 after restart.
+- Legacy systemd unit remains disabled/inactive; other PM2 applications were not restarted.
+- Feature working tree was clean after commit. This deployment evidence is recorded in a documentation-only follow-up commit; the built artifact is feature commit `a8dfc58`.
