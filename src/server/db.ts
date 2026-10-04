@@ -3,6 +3,14 @@ import { Pool } from "pg";
 import path from "node:path";
 import fs from "node:fs/promises";
 import { assertCloudConfig } from "./cloud-config";
+import { migrateDraftTickets, cleanupExpiredDrafts, startDraftCleanup } from "./draft-tickets";
+async function initializeDrafts(db: DB) {
+  const count=await migrateDraftTickets(db);
+  console.info(`Draft tickets migration: ${count} legacy drafts assigned`);
+  await cleanupExpiredDrafts(db);
+  startDraftCleanup(db);
+  return db;
+}
 export interface DB {
   query<T = any>(sql: string, params?: any[]): Promise<{ rows: T[] }>;
   transaction<T>(fn: (db: DB) => Promise<T>): Promise<T>;
@@ -46,7 +54,7 @@ export async function getDB(): Promise<DB> {
             }
           },
         });
-        return wrap(pool);
+        return initializeDrafts(wrap(pool));
       }
       await fs.mkdir(dataRoot(), { recursive: true });
       const pgDir = path.join(dataRoot(), "postgres");
@@ -61,7 +69,7 @@ export async function getDB(): Promise<DB> {
         transaction: (fn) => client.transaction((tx: any) => fn(wrap(tx))),
         close: () => pg.close(),
       });
-      return wrap(pg);
+      return initializeDrafts(wrap(pg));
     })();
   return globalDB.sikepelDB;
 }

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { reserveDraftTicket, DRAFT_LIFETIME_MS, migrateDraftTickets } from "./draft-tickets";
 import { getRequirements } from "./requirements";
 import { requirementsComplete } from "@/lib/requirements";
 import fs from "node:fs/promises";
@@ -24,14 +25,11 @@ import {
 import { dayID, type User, type Row } from "@/lib/types";
 export const flatten = (r: Row) => ({ ...r, ...r.data, data: undefined });
 export async function letterById(db: DB, user: User, id: string, lock = false) {
-  return authorizeRow(
-    user,
-    await one(
-      db,
-      `SELECT * FROM letters WHERE id=$1 ${lock ? "FOR UPDATE" : ""}`,
-      [id],
-    ),
-  );
+  const row = authorizeRow(user, await one(db,
+    `SELECT * FROM letters WHERE id=$1 ${lock ? "FOR UPDATE" : ""}`, [id]));
+  if (["DRAFT", "PREVIEW"].includes(row.status) && row.draft_expires_at && new Date(row.draft_expires_at).getTime() <= Date.now())
+    throw new AppError(410, "Draft kedaluwarsa. Buat draft baru.");
+  return row;
 }
 async function makeSnapshot(db: DB, user: User, l: Row) {
   const resident = authorizeRow(
@@ -79,6 +77,9 @@ async function makeSnapshot(db: DB, user: User, l: Row) {
     validateN1(l.form_data, resident.data.gender);
   const requirements = await getRequirements(db, l.village_id, l.type_id);
   return {
+    draft_ticket: l.draft_ticket,
+    draft_type_name: l.draft_type_name,
+    draft_expires_at: l.draft_expires_at,
     resident: flatten(resident),
     village: flatten(village),
     official: flatten(official),
@@ -93,6 +94,8 @@ export async function saveDraft(user: User, input: any, id?: string) {
   requireRoles(user, "OPERATOR", "ADMIN", "SUPER_ADMIN");
   const village = requireVillage(user);
   const db = await getDB();
+  const schema = await db.query("SELECT to_regclass('draft_ticket_registry') AS name");
+  if (!schema.rows[0]?.name) await migrateDraftTickets(db);
   if (!input.resident_id || !input.type_id)
     throw new AppError(400, "Pilih jenis surat dan penduduk terlebih dahulu.");
   const form = input.form_data || {};
@@ -127,6 +130,8 @@ export async function saveDraft(user: User, input: any, id?: string) {
     const letterId = id || randomUUID();
     if (id) {
       const old = await letterById(tx, user, id, true);
+      if (old.type_id !== input.type_id)
+        throw new AppError(409, "Tiket terikat jenis surat. Buat draft baru untuk jenis surat berbeda.");
       if (!["DRAFT", "PREVIEW"].includes(old.status))
         throw new AppError(
           409,
@@ -142,7 +147,11 @@ export async function saveDraft(user: User, input: any, id?: string) {
           JSON.stringify(form),
         ],
       );
-    } else
+    } else {
+      const type = await one(tx,"SELECT id,slug,name FROM letter_types WHERE id=$1",[input.type_id]);
+      const created = new Date();
+      const expires = new Date(created.getTime()+DRAFT_LIFETIME_MS);
+      const ticket = await reserveDraftTicket(tx,letterId,type,expires);
       await tx.query(
         "INSERT INTO letters(id,village_id,resident_id,type_id,official_id,form_data,created_by) VALUES($1,$2,$3,$4,$5,$6,$7)",
         [
@@ -155,6 +164,8 @@ export async function saveDraft(user: User, input: any, id?: string) {
           user.id,
         ],
       );
+      await tx.query("UPDATE letters SET draft_ticket=$2,draft_type_name=$3,draft_expires_at=$4,created_at=$5 WHERE id=$1",[letterId,ticket,type.name,expires,created]);
+    }
     await audit(
       tx,
       user,
@@ -187,7 +198,7 @@ export async function previewLetter(user: User, id: string) {
   const key = `previews/${l.village_id}/${id}/${randomUUID()}.pdf`;
   await storage.put(key, pdf);
   const r = await db.query(
-    "UPDATE letters SET preview_path=$2,status='PREVIEW',snapshot=$4,updated_at=now() WHERE id=$1 AND updated_at=$3 AND status IN ('DRAFT','PREVIEW') RETURNING *",
+    "UPDATE letters SET preview_path=$2,status='PREVIEW',snapshot=$4,updated_at=now() WHERE id=$1 AND updated_at=$3 AND status IN ('DRAFT','PREVIEW') AND draft_expires_at > now() RETURNING *",
     [id, key, l.updated_at, JSON.stringify(snapshot)],
   );
   if (!r.rows.length)
@@ -230,6 +241,8 @@ export async function allocateLetter(user: User, id: string) {
     const now = dayID(),
       year = Number(now.slice(0, 4)),
       month = Number(now.slice(5, 7));
+    if (new Date(l.draft_expires_at).getTime() <= Date.now())
+      throw new AppError(410, "Draft kedaluwarsa. Buat draft baru.");
     const counter = await one(
       tx,
       "INSERT INTO counters(village_id,type_id,year,last_sequence) VALUES($1,$2,$3,1) ON CONFLICT(village_id,type_id,year) DO UPDATE SET last_sequence=counters.last_sequence+1 RETURNING last_sequence",

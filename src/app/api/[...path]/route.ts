@@ -434,7 +434,7 @@ async function handle(
           page = Math.max(1, Number(sp.get("page")) || 1),
           args: any[] = [village, `%${q}%`];
         let filter =
-          "l.village_id=$1 AND (coalesce(l.number,'') ILIKE $2 OR coalesce(l.snapshot->'resident'->>'name',r.name) ILIKE $2 OR coalesce(l.snapshot->'resident'->>'nik',r.nik) LIKE $2)";
+          "l.village_id=$1 AND (l.status NOT IN ('DRAFT','PREVIEW') OR l.draft_expires_at > now()) AND (coalesce(l.draft_ticket,'') ILIKE $2 OR coalesce(l.number,'') ILIKE $2 OR coalesce(l.snapshot->'resident'->>'name',r.name) ILIKE $2 OR coalesce(l.snapshot->'resident'->>'nik',r.nik) LIKE $2)";
         for (const [key, col] of [
           ["status", "l.status"],
           ["type", "l.type_id"],
@@ -449,7 +449,7 @@ async function handle(
         }
         args.push(10, (page - 1) * 10);
         const result = await db.query(
-          `SELECT l.id,l.number,l.status,l.created_at,l.error,coalesce(l.snapshot->'resident'->>'name',r.name) AS resident_name,t.name AS type_name,u.name AS creator,count(*) OVER()::int AS total FROM letters l JOIN residents r ON r.id=l.resident_id JOIN letter_types t ON t.id=l.type_id JOIN users u ON u.id=l.created_by WHERE ${filter} ORDER BY l.created_at DESC LIMIT $${args.length - 1} OFFSET $${args.length}`,
+          `SELECT l.id,l.number,l.draft_ticket,l.draft_type_name,l.draft_expires_at,l.status,l.created_at,l.error,coalesce(l.snapshot->'resident'->>'name',r.name) AS resident_name,t.name AS type_name,u.name AS creator,count(*) OVER()::int AS total FROM letters l JOIN residents r ON r.id=l.resident_id JOIN letter_types t ON t.id=l.type_id JOIN users u ON u.id=l.created_by WHERE ${filter} ORDER BY l.created_at DESC LIMIT $${args.length - 1} OFFSET $${args.length}`,
           args,
         );
         return json({

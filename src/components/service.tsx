@@ -347,7 +347,7 @@ function LetterForm({
     <>
       <PageHeader
         title="Buat Surat"
-        description={type.name}
+        description={initial?.draft_ticket ? `${type.name} | Tiket ${initial.draft_ticket} | Berlaku sampai ${new Date(initial.draft_expires_at).toLocaleString("id-ID")}` : type.name}
         eyebrow="Pelayanan Surat"
       />
       <Steps step={2} />
@@ -521,7 +521,7 @@ function LetterForm({
               <h2>Catatan Petugas</h2>
               <RequirementChecklist requirements={type.requirements} checks={checks} onChange={next => { setChecks(next); setDirty(true); }} />
               <Field name="reporter_phone" label="Nomor WhatsApp pelapor" hint="Opsional untuk penerbitan; wajib valid hanya saat membuka pesan WhatsApp."><input id="reporter_phone" type="tel" value={phone} onChange={e=>{setPhone(e.target.value);setDirty(true);}} /></Field>
-              <WhatsAppRequirements phone={phone} name={resident.name} type={type.name} requirements={type.requirements || []} checks={checks} />
+              <WhatsAppRequirements phone={phone} name={resident.name} type={initial?.draft_ticket ? `${type.name} (tiket ${initial.draft_ticket})` : type.name} requirements={type.requirements || []} checks={checks} />
             </section>
             <div className="form-actions">
               <Button asChild variant="outline">
@@ -587,7 +587,7 @@ function Preview({ id }: { id: string }) {
     <>
       <PageHeader
         title="Preview Surat"
-        description="Periksa kembali isi surat sebelum diterbitkan."
+        description={`Tiket ${data.draft_ticket} | ${data.draft_type_name} | Berlaku sampai ${new Date(data.draft_expires_at).toLocaleString("id-ID")}. Nomor resmi belum dialokasikan.`}
         action={
           <Button asChild variant="outline">
             <Link href={"/app/pelayanan/draft/" + id}>
@@ -628,7 +628,7 @@ function Preview({ id }: { id: string }) {
                 </div>
               </dl>
               <RequirementChecklist requirements={data.type.requirements} checks={data.form_data.requirement_checks} />
-              <WhatsAppRequirements phone={data.form_data.reporter_phone || ""} name={data.resident.name} type={data.type.name} requirements={data.type.requirements || []} checks={data.form_data.requirement_checks || {}} />
+              <WhatsAppRequirements phone={data.form_data.reporter_phone || ""} name={data.resident.name} type={`${data.type.name} (tiket ${data.draft_ticket})`} requirements={data.type.requirements || []} checks={data.form_data.requirement_checks || {}} />
               {JSON.stringify(data.snapshot?.requirements || []) !== JSON.stringify(data.type.requirements || []) && <Alert kind="warning">Persyaratan berubah. Kembali ke form dan buat pratinjau baru.</Alert>}
               <Button
                 disabled={!requirementsComplete(data.type.requirements, data.form_data.requirement_checks) || JSON.stringify(data.snapshot?.requirements || []) !== JSON.stringify(data.type.requirements || [])}
@@ -990,7 +990,7 @@ function ArchiveDetail({ id, success }: { id: string; success: boolean }) {
             ? "Surat Berhasil Diterbitkan"
             : "Detail Arsip Surat"
         }
-        description={l.number || "Draft — nomor resmi belum dialokasikan"}
+        description={l.number || `Tiket ${l.draft_ticket} | ${l.draft_type_name} | Berlaku sampai ${new Date(l.draft_expires_at).toLocaleString("id-ID")}. Nomor resmi belum dialokasikan.`}
         action={
           l.has_pdf ? (
             actions

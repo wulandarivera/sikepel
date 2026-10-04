@@ -35,7 +35,14 @@ try {
  const href=await page.getByRole('link',{name:'Buka WhatsApp: Persyaratan Kurang'}).getAttribute('href');assert.equal(new URL(href).pathname,'/6281234567890');assert.match(new URL(href).searchParams.get('text'),/Dokumen Uji Wajib/);assert.ok(!href.includes(resident.nik));
  const boxes=await page.locator('.requirements-preview > *').evaluateAll(els=>els.map(e=>({x:e.getBoundingClientRect().x,y:e.getBoundingClientRect().y,width:e.getBoundingClientRect().width})));
  assert.ok(boxes[0].x<boxes[1].x);assert.equal(boxes[0].y,boxes[1].y);
- const id=new URL(page.url()).searchParams.get('letter');assert.equal((await context.request.post(base+`/api/letters/${id}/issue`,{headers:{origin:base},data:{}})).status(),400);
+ const id=new URL(page.url()).searchParams.get('letter');
+ const draft=await(await context.request.get(base+`/api/letters/${id}`)).json();
+ assert.match(draft.draft_ticket,/^DOMISILI-[A-F0-9]{16}$/);
+ assert.match(await page.locator('body').innerText(),new RegExp(draft.draft_ticket));
+ assert.match(new URL(href).searchParams.get('text'),new RegExp(draft.draft_ticket));
+ assert.equal(new Date(draft.draft_expires_at).getTime()-new Date(draft.created_at).getTime(),604800000);
+ const found=await(await context.request.get(base+`/api/letters?q=${draft.draft_ticket}`)).json();assert.equal(found.items[0].id,id);
+ assert.equal((await context.request.post(base+`/api/letters/${id}/issue`,{headers:{origin:base},data:{}})).status(),400);
  await page.setViewportSize({width:390,height:844});const mobile=await page.locator('.requirements-preview > *').evaluateAll(els=>els.map(e=>e.getBoundingClientRect().y));assert.ok(mobile[0]<mobile[1]);
  await page.getByRole('link',{name:'Kembali & Perbaiki'}).click();await page.getByLabel('Dokumen Uji Wajib (Wajib)',{exact:true}).check();await page.getByRole('button',{name:'Preview Surat',exact:true}).click();await page.waitForURL('**/preview?letter=*',{timeout:120000});assert.equal(await issue.isEnabled(),true);
  const pdf=await context.request.get(base+`/api/letters/${id}/pdf?preview=1`);assert.equal((await pdf.body()).subarray(0,5).toString(),'%PDF-');assert.deepEqual(errors,[]);

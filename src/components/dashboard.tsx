@@ -90,7 +90,7 @@ export function LetterTable({ items }: { items: Row[] }) {
                   })}
                 </small>
               </td>
-              <td className="mono">{l.number || "Belum bernomor"}</td>
+              <td className="mono">{l.number || l.draft_ticket || "Belum bernomor"}{["DRAFT", "PREVIEW"].includes(l.status) && l.draft_expires_at && <small>Berlaku sampai {new Date(l.draft_expires_at).toLocaleString("id-ID")}</small>}</td>
               <td>{l.type_name.replace("Surat Keterangan ", "Keterangan ")}</td>
               <td>
                 <strong>{l.resident_name}</strong>

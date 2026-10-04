@@ -1,0 +1,28 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { PGlite } from '@electric-sql/pglite';
+import { migrateDraftTickets, cleanupExpiredDrafts, startDraftCleanup } from '../src/server/draft-tickets';
+test('legacy grace is fixed, tickets unique, cleanup preserves issued history and timer runs without requests', async () => {
+ const pg = new PGlite(); await pg.waitReady;
+ const wrap = (p:any):any => ({ query:(s:string,a:any[])=>p.query(s,a), exec:(s:string)=>p.exec(s), transaction:(f:any)=>p.transaction((t:any)=>f(wrap(t))) }); const db=wrap(pg);
+ await db.exec(`CREATE TABLE letter_types(id text PRIMARY KEY,slug text,name text); CREATE TABLE letters(id text PRIMARY KEY,type_id text,status text,created_at timestamptz DEFAULT now()); INSERT INTO letter_types VALUES('t','domisili','Surat Domisili'); INSERT INTO letters(id,type_id,status) VALUES('a','t','DRAFT'),('b','t','PREVIEW'),('c','t','ISSUE_PENDING'),('d','t','ISSUED'),('e','t','CANCELLED');`);
+ const now = new Date('2026-01-01T00:00:00Z');
+ await migrateDraftTickets(db, now); const rows=(await db.query('SELECT * FROM letters ORDER BY id')).rows;
+ assert.match(rows[0].draft_ticket,/^DOMISILI-[A-F0-9]{16}$/); assert.notEqual(rows[0].draft_ticket,rows[1].draft_ticket);
+ assert.equal(new Date(rows[0].draft_expires_at).toISOString(),'2026-01-08T00:00:00.000Z');
+ await migrateDraftTickets(db,new Date('2027-01-01')); assert.equal((await db.query("SELECT draft_ticket FROM letters WHERE id='a'")).rows[0].draft_ticket,rows[0].draft_ticket);
+ await db.query("INSERT INTO letters(id,type_id,status,draft_expires_at) VALUES('race','t','PREVIEW',$1)",[now]);
+ await Promise.all([db.transaction(async(tx:any)=>{await tx.query("SELECT id FROM letters WHERE id='race' FOR UPDATE");await tx.query("UPDATE letters SET status='ISSUE_PENDING' WHERE id='race'");}),cleanupExpiredDrafts(db,now)]);
+ assert.equal((await db.query("SELECT status FROM letters WHERE id='race'")).rows[0]?.status,'ISSUE_PENDING');
+ await db.query("DELETE FROM letters WHERE id='race'");
+ assert.equal(await cleanupExpiredDrafts(db,new Date('2026-01-07T23:59:59.999Z')),0);
+ let clock=new Date('2026-01-07T23:59:59.999Z'); const stop=startDraftCleanup(db,{intervalMs:10,now:()=>clock});
+ clock=new Date('2026-01-08T00:00:00Z'); await new Promise(r=>setTimeout(r,100)); stop();
+ assert.deepEqual((await db.query('SELECT id FROM letters ORDER BY id')).rows.map((r:any)=>r.id),['c','d','e']);
+ assert.equal((await db.query('SELECT count(*)::int AS n FROM draft_ticket_registry WHERE expired_at IS NOT NULL')).rows[0].n,2);
+ const { reserveDraftTicket }=await import('../src/server/draft-tickets');
+ const values=[rows[0].draft_ticket.split('-')[1],'ABCDEF0123456789'];
+ const ticket=await reserveDraftTicket(db,'f',{id:'t',slug:'domisili',name:'Surat Domisili'},new Date('2027-01-01'),()=>values.shift()!);
+ assert.equal(ticket,'DOMISILI-ABCDEF0123456789');
+ await pg.close();
+});
