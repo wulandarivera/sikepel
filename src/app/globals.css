@@ -988,6 +988,24 @@ tbody tr:hover {
   margin-left: auto;
   width: 14px;
 }
+.nav-link .nav-badge {
+  margin-left: auto;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 12px;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.nav-link.active .nav-badge {
+  background: #ffffff;
+  color: #0061c8;
+}
 .sidebar-footer {
   padding: 30px 24px 22px;
   font-size: 10px;
@@ -3003,6 +3021,76 @@ tbody tr:hover {
 .service-stat-card.zero-count {
   opacity: 0.85;
 }
+
+/* Permohonan Mandiri Styles */
+.badge-PENDING_VERIFICATION {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.badge-NEEDS_REVISION {
+  background: #fef3c7;
+  color: #b45309;
+}
+.badge-APPROVED {
+  background: #dcfce7;
+  color: #15803d;
+}
+.badge-REJECTED {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.badge-COMPLETED {
+  background: #dff8ee;
+  color: #009866;
+}
+
+.mandiri-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .mandiri-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mandiri-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mandiri-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.mandiri-info-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.mandiri-info-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+}
+
+.mandiri-info-value {
+  font-size: 13px;
+  color: #1e293b;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
 
 .service-stat-card.has-count {
   border-color: #c0daf7;

@@ -145,6 +145,18 @@ export async function handleAdminPermohonanMandiri(
 
   // 2. /api/admin/permohonan-mandiri/:id
   if (pathParts.length === 1) {
+    if (pathParts[0] === "count" || pathParts[0] === "stats") {
+      if (method !== "GET") {
+        throw new AppError(405, "Metode tidak diizinkan.");
+      }
+      const pendingRes = await db.query(
+        "SELECT count(*)::int AS count FROM online_requests WHERE village_id = $1 AND status = 'PENDING_VERIFICATION'",
+        [village],
+      );
+      const c = pendingRes.rows[0]?.count || 0;
+      return json({ count: c, pending: c, pending_verification: c });
+    }
+
     const id = validateUUID(pathParts[0], "ID permohonan tidak valid.");
 
     // GET /api/admin/permohonan-mandiri/:id

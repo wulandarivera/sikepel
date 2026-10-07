@@ -1,5 +1,6 @@
 "use client";
-export default function ErrorPage({ reset }: { reset: () => void }) {
+export default function ErrorPage({ error, reset }: { error: Error; reset: () => void }) {
+  console.error("GLOBAL APP ERROR:", error);
   return (
     <main className="error-page">
       <h1>Halaman belum berhasil dimuat</h1>

@@ -27,6 +27,7 @@ import {
   X,
   Check,
   ShieldCheck,
+  Inbox,
 } from "lucide-react";
 import { useData, Loading, Alert, send, Empty } from "./common";
 import { roleLabels, type User, type Row } from "@/lib/types";
@@ -40,6 +41,7 @@ import {
   Profile,
   SettingsPage,
 } from "./administration";
+import { PermohonanMandiri } from "./permohonan-mandiri";
 import { Button } from "./ui/button";
 type Context = {
   user: User;
@@ -49,12 +51,20 @@ type Context = {
   officials: Row[];
   reload: () => void;
   notify: (s: string) => void;
+  pendingCount?: number;
+  reloadCounter?: () => void;
 };
 const AppContext = createContext<Context>(null!);
 export const useApp = () => useContext(AppContext);
 const all = ["SUPER_ADMIN", "ADMIN", "OPERATOR", "PIMPINAN"];
 const nav = [
   { href: "dashboard", label: "Dashboard", icon: LayoutDashboard, roles: all },
+  {
+    href: "permohonan-mandiri",
+    label: "Permohonan Mandiri",
+    icon: Inbox,
+    roles: ["SUPER_ADMIN", "ADMIN", "OPERATOR"],
+  },
   {
     href: "pelayanan/baru/jenis-surat",
     label: "Pelayanan Surat",
@@ -132,6 +142,15 @@ export function Workspace() {
     }
   }, [message]);
   useEffect(() => setMenu(false), [path]);
+
+  const user = data?.user as User | undefined;
+  const village = data?.villages?.find((v: Row) => v.id === user?.village_id);
+  const villageId = user?.village_id || village?.id;
+  const { data: counterData, reload: reloadCounter } = useData<{
+    count?: number;
+    pending_verification?: number;
+  }>(villageId ? "permohonan-mandiri/count" : null);
+
   if (error)
     return (
       <div className="error-page">
@@ -139,17 +158,22 @@ export function Workspace() {
         <Button onClick={reload}>Coba Lagi</Button>
       </div>
     );
-  if (!data) return <Loading />;
-  const user = data.user as User,
-    village = data.villages.find((v: Row) => v.id === user.village_id);
+  if (!data || !user) return <Loading />;
+
   const segment = path.split("/")[2] || "dashboard";
   const allowed = nav
     .find((n) => n.href.split("/")[0] === segment)
     ?.roles.includes(user.role);
-  const needsVillage = ["pelayanan", "penduduk", "arsip", "pejabat"].includes(
-    segment,
-  );
+  const needsVillage = [
+    "pelayanan",
+    "penduduk",
+    "arsip",
+    "pejabat",
+    "permohonan-mandiri",
+  ].includes(segment);
   const scopeMissing = needsVillage && !village;
+  const pendingCount =
+    counterData?.count ?? counterData?.pending_verification ?? 0;
   const context: Context = {
     user,
     villages: data.villages,
@@ -158,6 +182,8 @@ export function Workspace() {
     officials: data.officials,
     reload,
     notify,
+    pendingCount,
+    reloadCounter,
   };
   async function logout() {
     try {
@@ -228,6 +254,14 @@ export function Workspace() {
                         ? "Profil Kelurahan"
                         : n.label}
                     </span>
+                    {n.href === "permohonan-mandiri" && pendingCount > 0 && (
+                      <span
+                        className="nav-badge"
+                        aria-label={`${pendingCount} permohonan baru`}
+                      >
+                        {pendingCount}
+                      </span>
+                    )}
                     {n.href.startsWith("pelayanan") && (
                       <ChevronRight className="nav-chevron" />
                     )}
@@ -327,6 +361,7 @@ export function Workspace() {
             ) : (
               <>
                 {segment === "dashboard" && <Dashboard />}
+                {segment === "permohonan-mandiri" && <PermohonanMandiri />}
                 {segment === "penduduk" && <Residents />}
                 {segment === "pelayanan" && <Service />}
                 {segment === "arsip" && <Archive />}
