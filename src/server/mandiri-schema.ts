@@ -16,12 +16,16 @@ CREATE TABLE IF NOT EXISTS online_requests (
  verified_at timestamptz,
  verified_by uuid REFERENCES users(id),
  tracking_token_hash text NOT NULL,
- tracking_expires_at timestamptz NOT NULL
+ tracking_expires_at timestamptz NOT NULL,
+ letter_id uuid REFERENCES letters(id)
 );
 CREATE INDEX IF NOT EXISTS online_requests_scope_idx ON online_requests(village_id,created_at DESC);
 CREATE TABLE IF NOT EXISTS mandiri_attempts (key text PRIMARY KEY, attempts integer NOT NULL, reset_at timestamptz NOT NULL);
 `;
 export async function migrateMandiri(db: DB) {
   const exists = await db.query("SELECT to_regclass('residents') AS name");
-  if (exists.rows[0]?.name) await db.exec(mandiriSchema);
+  if (exists.rows[0]?.name) {
+    await db.exec(mandiriSchema);
+    await db.exec("ALTER TABLE online_requests ADD COLUMN IF NOT EXISTS letter_id uuid REFERENCES letters(id)").catch(() => {});
+  }
 }

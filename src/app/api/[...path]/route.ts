@@ -1,4 +1,5 @@
 import { mandiriResponse } from "@/server/mandiri";
+import { handleAdminPermohonanMandiri } from "@/server/permohonan-mandiri-admin";
 import { optionalPasswordSchema } from "@/lib/password-policy";
 import { NextRequest, NextResponse } from "next/server";
 import { getRequirements, validateRequirements } from "@/server/requirements";
@@ -72,7 +73,9 @@ async function handle(
       method = req.method,
       db = await getDB();
     if (route.startsWith("mandiri/")) return mandiriResponse(req, route.slice(8), db);
-    const token = req.cookies.get("sikepel_session")?.value;
+    const token =
+      req.cookies.get("sikepel_session")?.value ||
+      req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     if (method !== "GET") {
       sameOrigin(req);
       const length = Number(req.headers.get("content-length") || 0);
@@ -144,6 +147,13 @@ async function handle(
     }
     const user = await sessionUser(token);
     if (!user) throw new AppError(401, "Sesi berakhir. Silakan masuk kembali.");
+    if (
+      (p[0] === "admin" && p[1] === "permohonan-mandiri") ||
+      p[0] === "permohonan-mandiri"
+    ) {
+      const sub = p[0] === "admin" ? p.slice(2) : p.slice(1);
+      return await handleAdminPermohonanMandiri(req, sub, user, db);
+    }
     if (route === "logout" && method === "POST") {
       await db.query("DELETE FROM sessions WHERE token_hash=$1", [
         hashToken(token!),
