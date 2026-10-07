@@ -919,7 +919,7 @@ export function TemplateEditorModal({
                 onMouseLeave={() => setShowVariableDropdown(false)}
               >
                 <div className="variable-group-title">
-                  🏢 Kelurahan & Kecamatan
+                  Kelurahan & Kecamatan
                 </div>
                 {kelurahanPlaceholders.map((v) => (
                   <button
@@ -934,7 +934,7 @@ export function TemplateEditorModal({
                 ))}
 
                 <div className="variable-group-title">
-                  👤 Data Warga / Pemohon
+                  Data Warga / Pemohon
                 </div>
                 {residentPlaceholders.map((v) => (
                   <button
@@ -949,7 +949,7 @@ export function TemplateEditorModal({
                 ))}
 
                 <div className="variable-group-title">
-                  📄 Surat & Tanggal
+                  Surat & Tanggal
                 </div>
                 {letterInfoPlaceholders.map((v) => (
                   <button
@@ -964,7 +964,7 @@ export function TemplateEditorModal({
                 ))}
 
                 <div className="variable-group-title">
-                  ✍️ Penandatangan
+                  Penandatangan
                 </div>
                 {signatoryPlaceholders.map((v) => (
                   <button
@@ -981,7 +981,7 @@ export function TemplateEditorModal({
                 {specificFields.length > 0 && (
                   <>
                     <div className="variable-group-title">
-                      ⚡ Field Spesifik {data?.type.name}
+                      Field Spesifik {data?.type.name}
                     </div>
                     {specificFields
                       .filter((f) => f.key !== "catatan")
