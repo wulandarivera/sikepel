@@ -5,34 +5,44 @@ import { n1StatusOptions } from "@/lib/n1";
 const text = z.string().trim().min(1, "Wajib diisi").max(500);
 export function validatePindah(data: Record<string, unknown>) {
   const errors: Record<string, string> = {};
-  for (const key of ["rt_pindah", "rw_pindah"])
-    if (!/^\d{1,3}$/.test(String(data[key] ?? ""))) errors[key] = "Isi 1–3 digit.";
-  if (!/^\d{5}$/.test(String(data.pos_pindah ?? ""))) errors.pos_pindah = "Kode pos harus 5 digit.";
+  for (const key of ["rt_pindah", "rw_pindah"]) {
+    const val = String(data[key] ?? "").trim();
+    if (val && !/^\d{1,3}$/.test(val)) errors[key] = "Isi 1–3 digit.";
+  }
+  const pos = String(data.pos_pindah ?? "").trim();
+  if (pos && !/^\d{5}$/.test(pos)) errors.pos_pindah = "Kode pos harus 5 digit.";
   const members = data.anggota_pindah;
-  if (!Array.isArray(members) || members.length < 1 || members.length > 20)
-    errors.anggota_pindah = "Isi 1–20 anggota keluarga yang pindah.";
-  else {
-    const seen = new Set<string>();
-    members.forEach((m, index) => {
-      for (const key of ["nik", "nama", "shdk"]) {
-        const value = m && typeof m[key] === "string" ? m[key].trim() : "";
-        if (key === "nik" ? !/^\d{16}$/.test(value) : !value || value.length > 100)
-          errors[`anggota_pindah.${index}.${key}`] = key === "nik" ? "NIK harus 16 digit." : "Wajib diisi, maksimal 100 karakter.";
-      }
-      if (m?.nik && seen.has(m.nik)) errors[`anggota_pindah.${index}.nik`] = "NIK anggota tidak boleh duplikat.";
-      if (m?.nik) seen.add(m.nik);
-    });
+  if (members !== undefined && members !== null && Array.isArray(members) && members.length > 0) {
+    if (members.length > 20) {
+      errors.anggota_pindah = "Maksimal 20 anggota keluarga yang pindah.";
+    } else {
+      const seen = new Set<string>();
+      members.forEach((m, index) => {
+        for (const key of ["nik", "nama", "shdk"]) {
+          const value = m && typeof m[key] === "string" ? m[key].trim() : "";
+          if (value && key === "nik" && !/^\d{16}$/.test(value))
+            errors[`anggota_pindah.${index}.${key}`] = "NIK harus 16 digit.";
+          else if (value && value.length > 100)
+            errors[`anggota_pindah.${index}.${key}`] = "Maksimal 100 karakter.";
+        }
+        if (m?.nik && seen.has(m.nik)) errors[`anggota_pindah.${index}.nik`] = "NIK anggota tidak boleh duplikat.";
+        if (m?.nik) seen.add(m.nik);
+      });
+    }
   }
   if (Object.keys(errors).length) throw new AppError(400, "Periksa data kepindahan.", errors);
 }
 export function validateN1(data: Record<string, unknown>, gender: string) {
   const errors: Record<string, string> = {};
-  if (!n1StatusOptions(gender).includes(String(data.status_n1 ?? "")))
+  const statusN1 = String(data.status_n1 ?? "").trim();
+  if (statusN1 && !n1StatusOptions(gender).includes(statusN1))
     errors.status_n1 = "Pilih status perkawinan sesuai jenis kelamin pemohon.";
-  if (data.status_n1 === "Beristri" && !/^[1-9]\d*$/.test(String(data.istri_ke ?? "")))
+  if (data.status_n1 === "Beristri" && data.istri_ke && !/^[1-9]\d*$/.test(String(data.istri_ke ?? "")))
     errors.istri_ke = "Isi urutan istri dengan bilangan bulat mulai dari 1.";
-  for (const key of ["nik_bapak", "nik_ibu"])
-    if (!/^\d{16}$/.test(String(data[key] ?? ""))) errors[key] = "NIK harus terdiri dari 16 digit.";
+  for (const key of ["nik_bapak", "nik_ibu"]) {
+    const val = String(data[key] ?? "").trim();
+    if (val && !/^\d{16}$/.test(val)) errors[key] = "NIK harus terdiri dari 16 digit.";
+  }
   if (Object.keys(errors).length) throw new AppError(400, "Periksa data formulir N1.", errors);
 }
 export const residentSchema = z.object({
@@ -136,16 +146,17 @@ export function parse<T>(schema: z.ZodType<T>, data: unknown): T {
   }
   return r.data;
 }
-export function validateFields(fields: Field[], data: Record<string, unknown>) {
+export function validateFields(fields: Field[], data: Record<string, unknown>, options?: { allowEmptyRequired?: boolean }) {
   const errors: Record<string, string> = {};
   for (const f of fields) {
     const v = data[f.key];
     if (
+      !options?.allowEmptyRequired &&
       f.required &&
       (v === undefined || v === null || String(v).trim() === "")
     )
       errors[f.key] = `${f.label} wajib diisi`;
-    else if (v !== undefined && v !== "") {
+    else if (v !== undefined && v !== null && v !== "") {
       if (String(v).length > 2000) errors[f.key] = "Maksimal 2.000 karakter";
       if (
         f.type === "number" &&

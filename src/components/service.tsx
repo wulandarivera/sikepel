@@ -32,6 +32,7 @@ import { spouseDefaults } from "@/lib/spouse-form";
 import { RequirementChecklist, WhatsAppRequirements } from "./requirements";
 import { RequirementDetail } from "./requirement-detail";
 import { requirementsComplete } from "@/lib/requirements";
+import { isNationalityField, defaultNationalityValue } from "@/lib/letter-form";
 import { n1StatusOptions } from "@/lib/n1";
 import { PindahMembers } from "./pindah-members";
 import {
@@ -395,7 +396,9 @@ function LetterForm({
                   initial?.form_data[f.key] ??
                   (isPindah && f.key === "alamat_pindah" ? initial?.form_data.alamat_tujuan : undefined) ??
                   partnerDefaults[f.key] ??
-                  (f.key === "alamat_domisili"
+                  (isNationalityField(f)
+                    ? defaultNationalityValue(f)
+                    : f.key === "alamat_domisili"
                     ? `${resident.address}, RT ${resident.rt} / RW ${resident.rw}`
                     : f.key === "berlaku_mulai"
                       ? dayID()
@@ -434,7 +437,7 @@ function LetterForm({
                       <Field
                         name={f.key}
                         label={f.label}
-                        required={f.required || (type.slug === "nikah" && f.key === "istri_ke" && statusN1 === "Beristri")}
+                        required={false}
                         error={errors[f.key]}
                       >
                         {f.type === "checkbox" ? (

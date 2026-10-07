@@ -70,7 +70,7 @@ async function makeSnapshot(db: DB, user: User, l: Row) {
       400,
       "Penandatangan tidak aktif pada tanggal penerbitan.",
     );
-  validateFields(type.fields, l.form_data);
+  validateFields(type.fields, l.form_data, { allowEmptyRequired: true });
   if (type.slug === "pindah" && type.fields.some((field: { key: string }) => field.key === "no_klasifikasi_pindah"))
     validatePindah(l.form_data);
   if (type.slug === "nikah" && type.fields.some((field: { key: string }) => field.key === "status_n1"))

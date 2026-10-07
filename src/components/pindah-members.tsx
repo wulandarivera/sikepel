@@ -19,7 +19,7 @@ export function PindahMembers({ initial, resident, errors, onChange }: {
       <div className="form-grid">
         {([['nik', 'NIK'], ['nama', 'Nama lengkap'], ['shdk', 'SHDK']] as const).map(([key, label]) => {
           const id = `anggota_pindah.${index}.${key}`;
-          return <Field key={key} name={id} label={label} required error={errors[id]}>
+          return <Field key={key} name={id} label={label} required={false} error={errors[id]}>
             <input id={id} value={member[key]} maxLength={key === "nik" ? 16 : 100} inputMode={key === "nik" ? "numeric" : undefined}
               onChange={event => update(members.map((m, i) => i === index ? { ...m, [key]: event.target.value } : m))} />
           </Field>;
