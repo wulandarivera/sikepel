@@ -72,14 +72,32 @@ const attachments = [
   }
 ];
 
-// Insert 1 PENDING_VERIFICATION request
+// Insert 2 PENDING_VERIFICATION requests
 await db.query(
   \`INSERT INTO online_requests (
     id, ticket_code, type_id, village_id, status, form_data, attachments, contact_phone, tracking_token_hash, tracking_expires_at, created_at, updated_at
   ) VALUES (
-    $1, 'TIK-TEST-001', $2, $3, 'PENDING_VERIFICATION', $4, $5, '08123456789', 'dummy_hash', now() + interval '30 days', now(), now()
+    $1, 'TIK-TEST-001', $2, $3, 'PENDING_VERIFICATION', $4, $5, '08123456789', 'dummy_hash_1', now() + interval '30 days', now(), now()
   )\`,
   [randomUUID(), type.id, villageId, JSON.stringify(formData), JSON.stringify(attachments)]
+);
+
+const formData2 = {
+  ...formData,
+  resident: {
+    ...formData.resident,
+    nik: '3201010202020002',
+    name: 'Siti Aminah',
+  },
+  keperluan: 'permohonan bantuan sosial',
+};
+await db.query(
+  \`INSERT INTO online_requests (
+    id, ticket_code, type_id, village_id, status, form_data, attachments, contact_phone, tracking_token_hash, tracking_expires_at, created_at, updated_at
+  ) VALUES (
+    $1, 'TIK-TEST-002', $2, $3, 'PENDING_VERIFICATION', $4, $5, '08129876543', 'dummy_hash_2', now() + interval '30 days', now(), now()
+  )\`,
+  [randomUUID(), type.id, villageId, JSON.stringify(formData2), JSON.stringify(attachments)]
 );
 
 await db.close();
@@ -152,26 +170,19 @@ try {
 
   console.log("PASS 1: Operator login success");
 
-  // Debug: print current page content and links
-  const links = await page.evaluate(() => Array.from(document.querySelectorAll("a")).map(a => ({ text: a.innerText, href: a.getAttribute("href") })));
-  console.log("DEBUG LINKS:", JSON.stringify(links));
-  console.log("DEBUG URL:", page.url());
-  console.log("DEBUG COOKIES:", JSON.stringify(await context.cookies()));
-  console.log("DEBUG BODY:", await page.evaluate(() => document.body.innerHTML));
-  console.log("PAGE ERRORS:", JSON.stringify(pageErrors));
-
+  // Remove debug prints
   // Step B: Check Sidebar Menu & Badge Counter
   const mandiriLink = page.getByRole("link", {
     name: /Permohonan Mandiri/i,
   });
   await mandiriLink.waitFor();
 
-  // Check badge counter is visible and contains 1
+  // Check badge counter is visible and contains 2
   const badgeLocator = mandiriLink.locator(".nav-badge");
   await badgeLocator.waitFor({ timeout: 5000 });
   const badgeText = await badgeLocator.textContent();
-  assert.equal(badgeText?.trim(), "1", "Badge counter should show 1 pending request");
-  console.log("PASS 2: Sidebar menu 'Permohonan Mandiri' with badge counter '1' verified");
+  assert.equal(badgeText?.trim(), "2", "Badge counter should show 2 pending requests");
+  console.log("PASS 2: Sidebar menu 'Permohonan Mandiri' with badge counter '2' verified");
 
   // Step C: Navigate to List Page (/app/permohonan-mandiri or /admin/permohonan-mandiri)
   await mandiriLink.click();
@@ -184,14 +195,16 @@ try {
   const table = page.locator("table");
   await table.waitFor();
   assert.ok(await table.getByText("TIK-TEST-001").isVisible());
+  assert.ok(await table.getByText("TIK-TEST-002").isVisible());
   assert.ok(await table.getByText("Budi Santoso").isVisible());
-  assert.ok(await table.getByText("Menunggu Verifikasi").isVisible());
-  console.log("PASS 3: Responsive table list displays ticket, applicant name, and status");
+  assert.ok(await table.getByText("Siti Aminah").isVisible());
+  assert.ok(await table.getByText("Menunggu Verifikasi").first().isVisible());
+  console.log("PASS 3: Responsive table list displays tickets, applicant names, and statuses");
 
   // Verify Filter Tabs
   const tabRevisi = page.getByRole("button", { name: "Perlu Perbaikan" });
   await tabRevisi.click();
-  // Should show empty for NEEDS_REVISION
+  // Should show empty for NEEDS_REVISION initially
   await page.getByText("Tidak ada permohonan mandiri").waitFor();
 
   const tabSemua = page.getByRole("button", { name: "Semua" });
@@ -199,8 +212,41 @@ try {
   await table.getByText("TIK-TEST-001").waitFor();
   console.log("PASS 4: Filter tabs work correctly");
 
-  // Step D: Open Detail Page
-  await page.getByRole("link", { name: "Periksa" }).click();
+  // Step D: Open TIK-TEST-002 and test Tolak
+  const row2 = table.locator("tr", { hasText: "TIK-TEST-002" });
+  await row2.getByRole("link", { name: "Periksa" }).click();
+  await page.waitForURL("**/app/permohonan-mandiri/*");
+  await page.getByText("Siti Aminah").waitFor();
+
+  const tolakBtn = page.getByRole("button", { name: "Tolak" });
+  await tolakBtn.click();
+  const dialogTolak = page.getByRole("dialog");
+  await dialogTolak.waitFor();
+  await dialogTolak.locator("textarea").fill("Berkas pemohon tidak memenuhi persyaratan domisili wilayah.");
+  await dialogTolak.getByRole("button", { name: "Tolak Permohonan" }).click();
+
+  // Wait for status change to REJECTED
+  await page.waitForFunction(() => {
+    return document.body.innerText.includes("Permohonan Ditolak:");
+  });
+  assert.ok(await page.getByText("Berkas pemohon tidak memenuhi persyaratan domisili wilayah.").isVisible());
+  console.log("PASS 5: Action 'Tolak' sets status to REJECTED and records rejection note");
+
+  // Navigate back to list
+  await page.goto(base + "/app/permohonan-mandiri");
+  await page.waitForURL("**/app/permohonan-mandiri");
+
+  // Verify Ditolak tab shows TIK-TEST-002
+  const tabDitolak = page.getByRole("button", { name: "Ditolak" });
+  await tabDitolak.click();
+  await table.getByText("TIK-TEST-002").waitFor();
+  console.log("PASS 6: Filter tab 'Ditolak' contains rejected request");
+
+  // Step E: Open TIK-TEST-001 Detail Page
+  const tabSemua2 = page.getByRole("button", { name: "Semua" });
+  await tabSemua2.click();
+  const row1 = table.locator("tr", { hasText: "TIK-TEST-001" });
+  await row1.getByRole("link", { name: "Periksa" }).click();
   await page.waitForURL("**/app/permohonan-mandiri/*");
 
   // Verify 3-card layout
@@ -213,18 +259,18 @@ try {
   assert.ok(await mainArea.getByText("3201010101010001").isVisible());
   assert.ok(await mainArea.getByText("08123456789").isVisible());
   assert.ok(await mainArea.getByRole("link", { name: /Hubungi via WhatsApp/i }).isVisible());
-  console.log("PASS 5: Card 1 (Applicant data & WhatsApp action) verified");
+  console.log("PASS 7: Card 1 (Applicant data & WhatsApp action) verified");
 
   // Card 2: Attachment preview
   const imgPreview = page.locator("img[alt='Lampiran 1']");
   await imgPreview.waitFor();
-  console.log("PASS 6: Card 2 (In-browser attachment preview) verified");
+  console.log("PASS 8: Card 2 (In-browser attachment preview) verified");
 
   // Card 3: Form data
   assert.ok(await page.getByText("pendaftaran sekolah anak").isVisible());
-  console.log("PASS 7: Card 3 (Form data) verified");
+  console.log("PASS 9: Card 3 (Form data) verified");
 
-  // Step E: Test Edit Redaksi Sesuai SOP
+  // Step F: Test Edit Redaksi Sesuai SOP
   const editBtn = page.getByRole("button", { name: "Edit Data / Sesuaikan Redaksi" });
   await editBtn.click();
   const editDialog = page.getByRole("dialog");
@@ -238,9 +284,9 @@ try {
   await page.waitForFunction(() => {
     return document.body.innerText.includes("Persyaratan pendaftaran sekolah putra");
   });
-  console.log("PASS 8: Edit redaksi keperluan updated and rendered");
+  console.log("PASS 10: Edit redaksi keperluan updated and rendered");
 
-  // Step F: Test Minta Perbaikan dialog
+  // Step G: Test Minta Perbaikan dialog
   const mintaRevisiBtn = page.getByRole("button", { name: "Minta Perbaikan" });
   await mintaRevisiBtn.click();
   const dialogRevisi = page.getByRole("dialog");
@@ -252,9 +298,9 @@ try {
   await page.waitForFunction(() => {
     return document.body.innerText.includes("Menunggu Perbaikan Pemohon");
   });
-  console.log("PASS 9: Action 'Minta Perbaikan' transitions status and shows notice");
+  console.log("PASS 11: Action 'Minta Perbaikan' transitions status and shows notice");
 
-  // Step G: Test Setujui & Buat Surat Dinas
+  // Step H: Test Setujui & Buat Surat Dinas
   // Permohonan can still be approved from NEEDS_REVISION or PENDING_VERIFICATION
   const setujuiBtn = page.getByRole("button", { name: "Setujui & Terbitkan / Buat Surat" });
   await setujuiBtn.click();
@@ -264,15 +310,14 @@ try {
 
   // Should redirect to official letter draft page (/app/pelayanan/[letter_id])
   await page.waitForURL("**/app/pelayanan/*", { timeout: 30000 });
-  console.log("PASS 10: Action 'Setujui' generates official letter draft and redirects operator");
+  console.log("PASS 12: Action 'Setujui' generates official letter draft and redirects operator");
 
   // Step H: Check No Emoji in UI
   const bodyText = await page.evaluate(() => document.body.innerText);
   const emojiRegex =
-    /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
-  // Ignore copyright symbol if any
+    /[\p{Extended_Pictographic}\p{Regional_Indicator}\uFE0F\u20E3]/gu;
   const matchedEmoji = (bodyText.match(emojiRegex) || []).filter(
-    (e) => e !== "\u00a9" && e !== "\u00ae" && e !== "\u2014" && e !== "\u2013",
+    (e) => e !== "\u00a9" && e !== "\u00ae" && e !== "\u2122",
   );
   assert.equal(
     matchedEmoji.length,
