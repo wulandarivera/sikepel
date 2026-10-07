@@ -4,9 +4,11 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { assertCloudConfig } from "./cloud-config";
 import { migrateDraftTickets, cleanupExpiredDrafts, startDraftCleanup } from "./draft-tickets";
+import { migrateMandiri } from "./mandiri-schema";
 async function initializeDrafts(db: DB) {
   const count=await migrateDraftTickets(db);
   console.info(`Draft tickets migration: ${count} legacy drafts assigned`);
+  await migrateMandiri(db);
   await cleanupExpiredDrafts(db);
   startDraftCleanup(db);
   return db;

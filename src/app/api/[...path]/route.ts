@@ -1,3 +1,4 @@
+import { mandiriResponse } from "@/server/mandiri";
 import { optionalPasswordSchema } from "@/lib/password-policy";
 import { NextRequest, NextResponse } from "next/server";
 import { getRequirements, validateRequirements } from "@/server/requirements";
@@ -70,6 +71,7 @@ async function handle(
     const route = p.join("/"),
       method = req.method,
       db = await getDB();
+    if (route.startsWith("mandiri/")) return mandiriResponse(req, route.slice(8), db);
     const token = req.cookies.get("sikepel_session")?.value;
     if (method !== "GET") {
       sameOrigin(req);
