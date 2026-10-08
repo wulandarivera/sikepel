@@ -15,6 +15,7 @@ public/pdf.worker.min.mjs
 temp_backup/
 backups/
 reference/verification/
+screenshots/
 *.log
 /core
 /core.*

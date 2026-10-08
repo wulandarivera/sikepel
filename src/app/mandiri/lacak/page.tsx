@@ -8,8 +8,8 @@ export default function TrackPage(){
   const view=result?statusView(result.status):null;
   return (
     <>
-      <div className="portal-hero" style={{ textAlign: 'left', marginBottom: '24px' }}>
-        <h1 style={{ marginBottom: '8px' }}>Lacak Status Permohonan</h1>
+      <div className="portal-page-header">
+        <h1>Lacak Status Permohonan</h1>
         <p className="portal-lead">
           Gunakan nomor tiket resmi dan kode akses rahasia 64-karakter yang Anda peroleh saat mengirimkan permohonan.
         </p>

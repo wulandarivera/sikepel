@@ -1,13 +1,14 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Metadata } from 'next';
 import './portal.css';
 
 export const metadata: Metadata = {
-  title: 'Kelurahan Cibodas Mandiri — Pelayanan Surat Mandiri',
+  title: 'Kelurahan Cibodas Mandiri — Pelayanan Surat Mandiri SIKEPEL',
   description: 'Portal pelayanan mandiri pengajuan dan pelacakan surat warga Kelurahan Cibodas.',
   robots: { index: false, follow: false },
   referrer: 'no-referrer',
-  icons: { icon: [] }
+  icons: { icon: '/assets/icon.webp' }
 };
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -16,10 +17,19 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       <a className="portal-skip" href="#portal-main">Lewati ke isi</a>
       <header>
         <Link className="portal-brand" href="/mandiri">
-          <div className="portal-brand-badge">C</div>
+          <Image
+            src="/assets/icon.webp"
+            alt="Logo SIKEPEL"
+            width={40}
+            height={40}
+            className="portal-brand-logo"
+            priority
+          />
           <div className="portal-brand-text">
-            <span className="portal-brand-title">Kelurahan Cibodas</span>
-            <span className="portal-brand-subtitle">Portal Mandiri Warga</span>
+            <span className="portal-brand-title">
+              SIKE<span>PEL</span> <span className="portal-brand-tag">Mandiri</span>
+            </span>
+            <span className="portal-brand-subtitle">Pelayanan Mandiri Kelurahan Cibodas</span>
           </div>
         </Link>
         <nav aria-label="Navigasi warga">
