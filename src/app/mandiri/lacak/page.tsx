@@ -24,6 +24,7 @@ export default function TrackPage(){
           <small>Format: TIK-YYYYMM-XXXX</small>
           <input
             required
+            aria-label="Nomor tiket"
             autoComplete="off"
             spellCheck={false}
             pattern="TIK-[0-9]{6}-[A-F0-9]{8}"
@@ -38,6 +39,7 @@ export default function TrackPage(){
           <input
             required
             type="password"
+            aria-label="Kode akses rahasia"
             autoComplete="off"
             spellCheck={false}
             pattern="[a-f0-9]{64}"
@@ -52,7 +54,7 @@ export default function TrackPage(){
           <button disabled={busy}>{busy ? 'Memeriksa status…' : 'Lacak Status Tiket'}</button>
         </div>
         <p className="notice" style={{ marginTop: '20px', fontSize: '0.85rem' }}>
-          Jaga kerahasiaan kode akses. Tiket atau kode akses yang salah maupun kedaluwarsa akan ditampilkan sebagai permohonan tidak ditemukan demi perlindungan privasi.
+          Jaga kerahasiaan kode akses. Siapa pun yang memegang tiket dan kode akses dapat melacak permohonan Anda. Tiket atau kode akses yang salah maupun kedaluwarsa akan ditampilkan sebagai permohonan tidak ditemukan demi perlindungan privasi.
         </p>
       </form>
 
@@ -117,7 +119,7 @@ export default function TrackPage(){
           )}
 
           <p className="notice" style={{ marginTop: '20px' }}>
-            Tunggu konfirmasi atau arahan petugas kelurahan sebelum datang mengambil surat fisik di kantor kelurahan.
+            Status permohonan bukan bukti surat telah diterbitkan atau siap diambil. Tunggu arahan petugas sebelum mengambil surat fisik di kantor kelurahan. Unduhan PDF surat tidak tersedia.
           </p>
         </section>
       )}

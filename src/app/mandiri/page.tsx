@@ -40,7 +40,7 @@ export default function PortalHome() {
       </div>
 
       <aside className="notice">
-        <strong>Pemberitahuan Pelayanan:</strong> Data yang diajukan secara mandiri akan diverifikasi oleh petugas Kelurahan Cibodas. Pastikan nomor WhatsApp aktif untuk menerima instruksi pengambilan surat fisik di loket pelayanan.
+        <strong>Pemberitahuan Pelayanan:</strong> Data yang diajukan secara mandiri akan diverifikasi oleh petugas Kelurahan Cibodas. Nomor WhatsApp digunakan sebagai kontak petugas, bukan jaminan notifikasi otomatis. Pantau status melalui tiket; pengambilan surat fisik mengikuti arahan petugas.
       </aside>
     </>
   );
