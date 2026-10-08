@@ -21,11 +21,28 @@ try{
  browser=await chromium.launch({headless:true});const context=await browser.newContext({viewport:{width:390,height:844},acceptDownloads:true});const page=await context.newPage();page.on('pageerror',e=>report.pageErrors.push(e.message));
  const privateUrls=[];page.on('request',req=>privateUrls.push(req.url()));
  async function capture(name){
-  for(const width of [360,390,768,1440]){
+  for(const width of [320,360,390,768,1440]){
    await page.setViewportSize({width,height:900});
    await page.evaluate(()=>window.scrollTo(0,0));
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),name+' overflow '+width);
    await page.screenshot({path:path.join(artifacts,name+'-'+width+'.png'),fullPage:true});
+  }
+  await page.setViewportSize({width:640,height:900});
+  await page.evaluate(()=>document.documentElement.style.zoom='2');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),name+' 200% zoom overflow');
+  await page.evaluate(()=>document.documentElement.style.zoom='');
+  await page.setViewportSize({width:320,height:450});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),name+' 200% equivalent reflow');
+  for(const control of await page.locator('input:not([type=checkbox]), select, textarea, .secondary').all()){
+   await control.evaluate(el=>el.blur());await page.mouse.move(0,0);
+   for(const state of ['default','hover','focus']){
+    if(state==='hover')await control.hover();
+    if(state==='focus')await control.focus();
+    await page.waitForTimeout(200);
+    const colors=await control.evaluate(el=>{const s=getComputedStyle(el);return [s.borderTopColor,s.backgroundColor];});
+    const lum=color=>{const rgb=color.match(/\d+/g).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4);return rgb[0]*0.2126+rgb[1]*0.7152+rgb[2]*0.0722;};
+    assert.ok((lum(colors[1])+0.05)/(lum(colors[0])+0.05)>=3,name+' '+state+' border contrast');
+   }
   }
   await page.setViewportSize({width:390,height:844});
  }
@@ -51,10 +68,10 @@ try{
  assert.match(await page.locator('main').innerText(),/Siapa pun.*kode akses.*melacak/);assert.match(await page.locator('main').innerText(),/bukan bukti surat telah diterbitkan/);
  await page.screenshot({path:path.join(artifacts,'receipt-390.png'),fullPage:true,mask:[page.locator('.receipt-token-box'),page.locator('.receipt-ticket')]});
  const downloadEvent=page.waitForEvent('download');await page.getByRole('button',{name:'Unduh Catatan Tiket',exact:true}).click();const download=await downloadEvent;const receiptText=await fs.readFile(await download.path(),'utf8');assert.ok(receiptText.includes(receipt.tracking_token));report.cases.push('explicit private access download');
- await page.getByRole('link',{name:'Ke Halaman Lacak',exact:true}).click();await page.getByLabel('Nomor tiket',{exact:true}).fill(receipt.ticket);await page.getByLabel('Kode akses rahasia',{exact:true}).fill('0'.repeat(64));await page.getByRole('button',{name:'Lacak Status Tiket',exact:true}).click();await page.getByRole('alert').filter({hasText:'Tiket tidak ditemukan'}).waitFor();
+ await page.getByRole('link',{name:'Ke Halaman Lacak',exact:true}).click();await page.getByLabel('Nomor tiket',{exact:true}).waitFor();assert.match(await page.locator('main').innerText(),/Format: TIK-YYYYMM-XXXXXXXX/);await page.getByLabel('Nomor tiket',{exact:true}).focus();await page.keyboard.press('Tab');assert.equal(await page.getByLabel('Kode akses rahasia',{exact:true}).evaluate(el=>el===document.activeElement),true);assert.equal(await page.getByLabel('Kode akses rahasia',{exact:true}).evaluate(el=>getComputedStyle(el).outlineWidth),'3px');await page.keyboard.press('Tab');assert.equal(await page.getByRole('button',{name:'Lacak Status Tiket',exact:true}).evaluate(el=>el===document.activeElement),true);report.cases.push('tracking helper eight characters; keyboard Tab and visible 3px focus');await page.getByLabel('Nomor tiket',{exact:true}).fill('TIK-202610-ABCD');assert.equal(await page.getByLabel('Nomor tiket',{exact:true}).evaluate(el=>el.validity.patternMismatch),true);await page.getByLabel('Nomor tiket',{exact:true}).fill(receipt.ticket);assert.equal(await page.getByLabel('Nomor tiket',{exact:true}).evaluate(el=>el.validity.patternMismatch),false);await page.getByLabel('Kode akses rahasia',{exact:true}).fill('0'.repeat(64));await page.getByRole('button',{name:'Lacak Status Tiket',exact:true}).click();await page.getByRole('alert').filter({hasText:'Tiket tidak ditemukan'}).waitFor();
  await page.getByLabel('Kode akses rahasia',{exact:true}).fill(receipt.tracking_token);await page.getByRole('button',{name:'Lacak Status Tiket',exact:true}).click();await page.getByRole('region',{name:'Hasil pelacakan'}).waitFor();assert.match(await page.getByRole('region',{name:'Hasil pelacakan'}).innerText(),/Menunggu verifikasi berkas/);report.cases.push('wrong token rejected; correct bearer tracking succeeds');
  await page.getByLabel('Nomor tiket',{exact:true}).fill('TIK-202610-AAAAAAAA');await page.getByLabel('Kode akses rahasia',{exact:true}).fill(revisionToken);await page.getByRole('button',{name:'Lacak Status Tiket',exact:true}).click();await page.getByRole('heading',{name:'Perlu perbaikan',exact:true}).waitFor();assert.match(await page.locator('main').innerText(),/Lengkapi berkas KK/);assert.equal(await page.locator('input[type=file]').count(),0);report.cases.push('revision note honest; unsupported re-upload absent');
- await capture('tracking-revision');report.cases.push('responsive geometry 360/390/768/1440px');
+ assert.equal(await page.locator('.timeline [aria-current=step]').count(),1);assert.ok(!(await page.locator('.timeline').innerText()).includes('\u2713'));assert.match(await page.locator('.timeline').innerText(),/tahap selesai/);report.cases.push('timeline semantic completion text, no decorative glyph, aria-current preserved');await capture('tracking-revision');report.cases.push('responsive geometry 320/360/390/768/1440px; 200% zoom/reflow; control contrast default/hover/focus');
  assert.ok(!privateUrls.some(url=>url.includes(receipt.tracking_token)||url.includes(revisionToken)||url.includes('1234567890123456')));report.cases.push('NIK and access tokens absent from URLs');
  const hostRoot=await fetch(base+'/',{headers:{'x-forwarded-host':'mandiri.sikepel.biz.id'}});assert.equal(hostRoot.status,200);assert.match(await hostRoot.text(),/Pelayanan Surat Cepat/);for(const url of ['/app','/login','/api/bootstrap'])assert.equal((await fetch(base+url,{headers:{'x-forwarded-host':'mandiri.sikepel.biz.id'}})).status,404);report.cases.push('real portal-host root rewrite and administrative isolation');
  assert.deepEqual(report.pageErrors,[]);report.passed=true;await fs.mkdir('reference/verification',{recursive:true});await fs.writeFile('reference/verification/mandiri-frontend-browser.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));

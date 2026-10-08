@@ -12,7 +12,9 @@
   --color-bg-base: #f8fafc;
   --color-card-bg: #ffffff;
   --color-border: #e2e8f0;
-  --color-border-focus: #3b82f6;
+  --color-control-border: #64748b;
+  --color-control-border-hover: #475569;
+  --color-border-focus: #1e3a8a;
   --color-success: #059669;
   --color-success-bg: #ecfdf5;
   --color-warning: #d97706;
@@ -240,7 +242,7 @@
   min-height: 44px;
   background: #ffffff;
   color: var(--color-text-main);
-  border: 1.5px solid var(--color-border);
+  border: 1.5px solid var(--color-control-border);
   border-radius: var(--radius-md);
   padding: 10px 14px;
   font-family: inherit;
@@ -251,7 +253,7 @@
 .portal input:hover,
 .portal select:hover,
 .portal textarea:hover {
-  border-color: #cbd5e1;
+  border-color: var(--color-control-border-hover);
 }
 
 .portal input:focus,
@@ -310,14 +312,14 @@
 
 .portal .secondary {
   background: #ffffff !important;
-  border: 1.5px solid var(--color-border) !important;
+  border: 1.5px solid var(--color-control-border) !important;
   color: var(--color-text-main) !important;
   box-shadow: none !important;
 }
 
 .portal .secondary:hover:not(:disabled) {
   background: #f8fafc !important;
-  border-color: #cbd5e1 !important;
+  border-color: var(--color-control-border-hover) !important;
 }
 
 .portal button:disabled {
@@ -420,7 +422,10 @@
 .portal dl { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(0, 2fr); gap: 12px; }
 .portal dt { font-weight: 600; }
 .portal dd { overflow-wrap: anywhere; margin: 0; }
-.portal :focus-visible { outline: 3px solid var(--color-accent); outline-offset: 4px; }
+.portal :focus-visible,
+.portal input:focus-visible,
+.portal select:focus-visible,
+.portal textarea:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 4px; }
 .portal main, .portal main * { min-width: 0; }
 .portal main { scroll-margin-top: 120px; }
 .portal main li { overflow-wrap: anywhere; }

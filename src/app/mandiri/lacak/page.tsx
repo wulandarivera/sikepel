@@ -21,7 +21,7 @@ export default function TrackPage(){
         <h2 style={{ fontSize: '1.2rem', marginBottom: '16px' }}>Identifikasi Berkas Pelacakan</h2>
         <label>
           Nomor Tiket
-          <small>Format: TIK-YYYYMM-XXXX</small>
+          <small>Format: TIK-YYYYMM-XXXXXXXX</small>
           <input
             required
             aria-label="Nomor tiket"
@@ -95,9 +95,9 @@ export default function TrackPage(){
                   background: view.step > i ? 'var(--color-success)' : view.step === i ? 'var(--color-accent)' : '#f1f5f9',
                   color: view.step >= i ? '#ffffff' : 'var(--color-text-muted)'
                 }}>
-                  {view.step > i ? '✓' : i + 1}
+                  {i + 1}
                 </span>
-                <span>{label}{view.step === i ? ' — status saat ini' : ''}</span>
+                <span>{label}{view.step === i ? ' — status saat ini' : view.step > i ? ' — tahap selesai' : ''}</span>
               </li>
             ))}
           </ol>
