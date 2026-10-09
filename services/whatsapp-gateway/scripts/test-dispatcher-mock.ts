@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import http from "node:http";
+import { config } from "../src/config.js";
 import {
   normalizePhoneToJid,
   createHttpServer,
@@ -115,9 +116,12 @@ async function runTests() {
   const address = testServer.address() as any;
   const baseUrl = `http://127.0.0.1:${address.port}`;
 
+  const previousSecret = config.secret;
+  config.secret = "test-only";
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer test-only" };
   try {
     // Check GET /health
-    const healthRes = await fetch(`${baseUrl}/health`);
+    const healthRes = await fetch(`${baseUrl}/health`, { headers });
     assert.equal(healthRes.status, 200);
     const healthJson: any = await healthRes.json();
     assert.equal(healthJson.connected, true);
@@ -133,7 +137,7 @@ async function runTests() {
     };
     const notifyRes = await fetch(`${baseUrl}/notify`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(notifyPayload),
     });
     assert.equal(notifyRes.status, 200);
@@ -152,13 +156,14 @@ async function runTests() {
     // Check POST /send
     const sendRes = await fetch(`${baseUrl}/send`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ to: "08987654321", text: "Halo warga Cibodas" }),
     });
     assert.equal(sendRes.status, 200);
     assert.equal(sentMessagePayload.jid, "628987654321@s.whatsapp.net");
     assert.equal(sentMessagePayload.content.text, "Halo warga Cibodas");
   } finally {
+    config.secret = previousSecret;
     testServer.close();
   }
 
