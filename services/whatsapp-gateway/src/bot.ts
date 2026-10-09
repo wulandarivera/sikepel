@@ -74,6 +74,7 @@ export async function processMessageText(
 export async function handleIncomingMessage(
   sock: WASocket,
   msg: proto.IWebMessageInfo,
+  onSentMessage?: (id: string, message: proto.IMessage) => void,
 ): Promise<void> {
   try {
     if (!msg.key || msg.key.fromMe) return;
@@ -92,7 +93,10 @@ export async function handleIncomingMessage(
     const reply = await processMessageText(text);
     if (!reply) return;
 
-    await sock.sendMessage(jid, { text: reply });
+    const sent = await sock.sendMessage(jid, { text: reply });
+    if (sent?.key?.id && sent?.message && onSentMessage) {
+      onSentMessage(sent.key.id, sent.message);
+    }
     logger.info({ to: jid }, "Berhasil mengirim balasan otomatis hotline warga");
   } catch (err: any) {
     logger.error(

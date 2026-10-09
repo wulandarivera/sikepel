@@ -133,6 +133,9 @@ export function createHttpServer(
         const jid = normalizePhoneToJid(to);
         const sent = await sock.sendMessage(jid, { text });
         sessionManager.logs?.add("out", "sent", sent?.key);
+        if (sent?.key?.id && sent?.message) {
+          sessionManager.storeMessage(sent.key.id, sent.message);
+        }
 
         logger.info("Pesan WhatsApp berhasil dikirim");
         return sendJsonResponse(res, 200, { ok: true, recipient: jid });
@@ -175,6 +178,9 @@ export function createHttpServer(
         const sent = await sock.sendMessage(jid, { text: messageText });
 
         sessionManager.logs?.add("out", "sent", sent?.key);
+        if (sent?.key?.id && sent?.message) {
+          sessionManager.storeMessage(sent.key.id, sent.message);
+        }
         logger.info("Notifikasi status permohonan berhasil dikirim ke pemohon");
         return sendJsonResponse(res, 200, {
           ok: true,
