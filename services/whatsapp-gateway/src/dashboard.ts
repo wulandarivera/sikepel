@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { randomUUID } from "node:crypto";
+import { createHmac, randomBytes, randomUUID } from "node:crypto";
 const require = createRequire(import.meta.url);
 // Reuse the installed local QR encoder, no remote image service.
 const QRCode = require("qrcode-terminal/vendor/QRCode/index.js");
@@ -16,10 +16,19 @@ export function cleanName(value?: string | null): string | null {
 }
 export class DashboardLogs {
   private entries: Array<{ id: string; at: string; direction: "in" | "out"; recipient: string; summary: string; status: string }> = [];
-  add(direction: "in" | "out", status: "received" | "sent" | "failed") {
+  private identitySecret = randomBytes(32);
+  private seen = new Set<string>();
+  add(direction: "in" | "out", status: "received" | "sent" | "failed", key?: { id?: string | null; remoteJid?: string | null }) {
+    if (key?.id && key.remoteJid) {
+      const identity = createHmac("sha256", this.identitySecret).update(JSON.stringify([direction, key.remoteJid, key.id])).digest("hex");
+      if (this.seen.has(identity)) return;
+      this.seen.add(identity);
+      // Retain recent identities beyond the visible 100 rows, without unbounded memory.
+      if (this.seen.size > 1000) this.seen.delete(this.seen.values().next().value!);
+    }
     this.entries.push({ id: randomUUID(), at: new Date().toISOString(), direction, recipient: "[redacted]", summary: direction === "in" ? "Pesan masuk" : "Pesan keluar", status });
     if (this.entries.length > 100) this.entries.shift();
   }
   list() { return this.entries.map((entry) => ({ ...entry })); }
-  clear() { this.entries = []; }
+  clear() { this.entries = []; this.seen.clear(); this.identitySecret = randomBytes(32); }
 }

@@ -6,6 +6,45 @@ import { DashboardLogs, qrDataUrl, cleanName } from "../src/dashboard.js";
 import { WhatsAppSessionManager } from "../src/session.js";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { EventEmitter } from "node:events";
+
+for (const endpoint of ["/send", "/notify"]) {
+  for (const early of [false, true]) {
+    test(`${endpoint}: repeated ack/read ${early ? "before" : "after"} send result keeps one activity`, async () => {
+      const previous = config.secret;
+      const manager = new WhatsAppSessionManager();
+      const internal = manager as any;
+      const events = new EventEmitter();
+      events.on("messages.update", (updates) => internal.handleMessageUpdates(updates));
+      const key = { id: "test-message-id", remoteJid: "628123456789@s.whatsapp.net", fromMe: true };
+      const acknowledge = () => {
+        for (const status of [2, 3, 4, 4]) events.emit("messages.update", [{ key, update: { status } }]);
+      };
+      internal.sock = { sendMessage: async () => { if (early) acknowledge(); return { key }; } };
+      internal.isConnected = true;
+      const server = createHttpServer(manager);
+      await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+      try {
+        config.secret = "test-only";
+        const body = endpoint === "/send" ? { to: "08123456789", text: "Test" } : { to: "08123456789", ticket: "TEST", status: "APPROVED", type_name: "Test" };
+        const response = await fetch(`http://127.0.0.1:${(server.address() as any).port}${endpoint}`, {
+          method: "POST", headers: { authorization: "Bearer test-only", "content-type": "application/json" }, body: JSON.stringify(body),
+        });
+        assert.equal(response.status, 200);
+        acknowledge();
+        const logs = manager.getDashboardStatus().logs;
+        assert.equal(logs.length, 1);
+        assert.equal(logs[0].status, "sent");
+        assert.equal(logs[0].direction, "out");
+        assert.ok(!JSON.stringify(logs).includes(key.id));
+        assert.ok(!JSON.stringify(logs).includes(key.remoteJid));
+      } finally {
+        config.secret = previous;
+        await new Promise<void>((resolve) => server.close(() => resolve()));
+      }
+    });
+  }
+}
 
 test("daemon QR/status fail closed; explicit scope; logout confirmation", async () => {
   const previous = config.secret;
@@ -34,6 +73,23 @@ test("daemon QR/status fail closed; explicit scope; logout confirmation", async 
     await new Promise<void>((resolve) => server.close(() => resolve()));
   }
 });
+test("message identities remain private, distinguish chats, survive row eviction, reset on logout", () => {
+  const logs = new DashboardLogs();
+  const key = { id: "fixture-id", remoteJid: "fixture-chat" };
+  logs.add("out", "sent", key);
+  for (let i = 0; i < 150; i++) logs.add("out", "sent", { id: String(i), remoteJid: "fixture-chat" });
+  const before = logs.list();
+  logs.add("out", "sent", key);
+  assert.deepEqual(logs.list(), before);
+  logs.add("out", "sent", { ...key, remoteJid: "other-chat" });
+  assert.notDeepEqual(logs.list(), before);
+  assert.equal(logs.list().length, 100);
+  logs.clear();
+  logs.add("out", "sent", key);
+  assert.equal(logs.list().length, 1);
+  assert.ok(!JSON.stringify(logs.list()).includes("fixture"));
+});
+
 test("logs bounded, metadata only; QR local SVG; profile emoji removed", () => {
   const logs = new DashboardLogs(); for (let i = 0; i < 150; i++) logs.add("in", "received");
   assert.equal(logs.list().length, 100); assert.equal(logs.list()[0].recipient, "[redacted]");
