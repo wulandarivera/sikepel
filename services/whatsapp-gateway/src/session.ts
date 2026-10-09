@@ -22,6 +22,9 @@ export class WhatsAppSessionManager {
   private credentialWrites: Promise<void> = Promise.resolve();
   public readonly logs = new DashboardLogs();
 
+  private handleMessageUpdates(updates: Array<{ key: { fromMe?: boolean | null; id?: string | null; remoteJid?: string | null }; update: { status?: number | null } }>) {
+    for (const update of updates) if (update.key.fromMe && update.update.status && update.key.id && update.key.remoteJid) this.logs.add("out", "sent", update.key);
+  }
   public getSocket() { return this.sock; }
   public getQR() { return this.currentQr; }
   public getStatus() {
@@ -95,7 +98,7 @@ export class WhatsAppSessionManager {
       });
       sock.ev.on("messages.update", (updates) => {
         if (!active()) return;
-        for (const update of updates) if (update.key.fromMe && update.update.status) this.logs.add("out", "sent");
+        this.handleMessageUpdates(updates);
       });
     } catch {
       if (!active()) return;
