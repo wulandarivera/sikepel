@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
-    "build": "next build",
+    "build": "next build --webpack",
     "vercel-build": "npm run cloud:check && next build",
     "cloud:check": "tsx scripts/check-cloud.ts",
     "cloud:init": "tsx scripts/init-cloud.ts",
@@ -16,7 +16,11 @@
     "test": "tsx --test tests/*.test.ts",
     "setup": "tsx scripts/setup.ts",
     "postinstall": "node scripts/prepare-assets.mjs",
-    "test:browser": "node scripts/browser-check.mjs"
+    "test:browser": "node scripts/browser-check.mjs",
+    "wa:build": "cd services/whatsapp-gateway && npm run build",
+    "wa:start": "cd services/whatsapp-gateway && npm run start",
+    "wa:qr": "cd services/whatsapp-gateway && npm run qr",
+    "wa:test": "cd services/whatsapp-gateway && npm run test"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.14",
