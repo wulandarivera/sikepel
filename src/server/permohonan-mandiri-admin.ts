@@ -3,6 +3,7 @@ import { type DB, one, dataRoot } from "./db";
 import type { User } from "../lib/types";
 import { AppError, requireRoles, requireVillage, audit } from "./security";
 import { saveDraft, previewLetter, allocateLetter } from "./letters";
+import { notifyPermohonanStatus } from "./whatsapp";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -440,6 +441,20 @@ export async function handleAdminPermohonanMandiri(
         },
       );
 
+      const typeRow = await one(
+        db,
+        "SELECT name FROM letter_types WHERE id = $1",
+        [row.type_id],
+      );
+      notifyPermohonanStatus({
+        to: row.contact_phone,
+        ticket: row.ticket_code,
+        status: "NEEDS_REVISION",
+        type_name: typeRow?.name || "Surat Keterangan",
+        resident_name: row.form_data?.resident?.name,
+        note,
+      }).catch(() => {});
+
       return json({
         ok: true,
         id,
@@ -492,6 +507,20 @@ export async function handleAdminPermohonanMandiri(
           actor: user.name,
         },
       );
+
+      const typeRow = await one(
+        db,
+        "SELECT name FROM letter_types WHERE id = $1",
+        [row.type_id],
+      );
+      notifyPermohonanStatus({
+        to: row.contact_phone,
+        ticket: row.ticket_code,
+        status: "REJECTED",
+        type_name: typeRow?.name || "Surat Keterangan",
+        resident_name: row.form_data?.resident?.name,
+        note: reason,
+      }).catch(() => {});
 
       return json({
         ok: true,
@@ -625,6 +654,19 @@ export async function handleAdminPermohonanMandiri(
         },
       );
 
+      const typeRow = await one(
+        db,
+        "SELECT name FROM letter_types WHERE id = $1",
+        [row.type_id],
+      );
+      notifyPermohonanStatus({
+        to: row.contact_phone,
+        ticket: row.ticket_code,
+        status: "APPROVED",
+        type_name: typeRow?.name || "Surat Keterangan",
+        resident_name: pemohon.name,
+      }).catch(() => {});
+
       return json({
         ok: true,
         id,
@@ -632,6 +674,56 @@ export async function handleAdminPermohonanMandiri(
         resident_id: residentId,
         letter_id: draft.id,
         letter: letterResult,
+      });
+    }
+
+    // POST /api/admin/permohonan-mandiri/:id/(siap-diambil|selesai)
+    if (action === "siap-diambil" || action === "selesai") {
+      if (row.status !== "APPROVED") {
+        throw new AppError(
+          400,
+          `Hanya permohonan berstatus APPROVED yang dapat ditandai siap diambil atau selesai (status saat ini: ${row.status}).`,
+        );
+      }
+
+      await db.query(
+        `
+        UPDATE online_requests
+        SET status = 'COMPLETED',
+            updated_at = now()
+        WHERE id = $1 AND village_id = $2
+      `,
+        [id, village],
+      );
+
+      await audit(
+        db,
+        user,
+        "ONLINE_REQUEST_COMPLETED",
+        "online_requests",
+        id,
+        {
+          actor: user.name,
+        },
+      );
+
+      const typeRow = await one(
+        db,
+        "SELECT name FROM letter_types WHERE id = $1",
+        [row.type_id],
+      );
+      notifyPermohonanStatus({
+        to: row.contact_phone,
+        ticket: row.ticket_code,
+        status: "COMPLETED",
+        type_name: typeRow?.name || "Surat Keterangan",
+        resident_name: row.form_data?.resident?.name,
+      }).catch(() => {});
+
+      return json({
+        ok: true,
+        id,
+        status: "COMPLETED",
       });
     }
 
