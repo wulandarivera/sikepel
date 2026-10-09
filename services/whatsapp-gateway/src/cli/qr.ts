@@ -8,7 +8,9 @@ async function main() {
   // 1. Coba hubungi daemon gateway yang sedang berjalan
   try {
     const healthUrl = `http://${config.host}:${config.port}/health`;
-    const res = await fetch(healthUrl, { signal: AbortSignal.timeout(2000) });
+    const headers = { Authorization: `Bearer ${config.secret}` };
+    const res = await fetch(healthUrl, { headers, signal: AbortSignal.timeout(2000) });
+    if (res.status === 401) throw new Error("WA_GATEWAY_SECRET wajib cocok dengan daemon");
     if (res.ok) {
       const data: any = await res.json();
       if (data.connected) {
@@ -18,7 +20,8 @@ async function main() {
       }
 
       const qrUrl = `http://${config.host}:${config.port}/qr`;
-      const qrRes = await fetch(qrUrl, { signal: AbortSignal.timeout(2000) });
+      const qrRes = await fetch(qrUrl, { headers, signal: AbortSignal.timeout(2000) });
+      if (qrRes.status === 401) throw new Error("WA_GATEWAY_SECRET wajib cocok dengan daemon");
       if (qrRes.ok) {
         const qrData: any = await qrRes.json();
         if (qrData.qr) {
@@ -29,7 +32,9 @@ async function main() {
         }
       }
     }
-  } catch {}
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("WA_GATEWAY_SECRET")) throw err;
+  }
 
   // 2. Jika daemon belum berjalan, jalankan inisialisasi sesi interaktif
   console.log("Daemon gateway tidak terdeteksi aktif pada port " + config.port + ".");

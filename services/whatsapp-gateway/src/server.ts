@@ -1,4 +1,5 @@
 import http from "node:http";
+import { timingSafeEqual } from "node:crypto";
 import { config } from "./config.js";
 import { logger } from "./logger.js";
 import {
@@ -20,12 +21,16 @@ export function normalizePhoneToJid(phone: string): string {
 function parseJsonBody(req: http.IncomingMessage): Promise<any> {
   return new Promise((resolve, reject) => {
     let body = "";
+    let oversized = false;
     req.on("data", (chunk) => {
+      if (oversized) return;
       body += chunk;
-      if (body.length > 1024 * 64) {
+      if (Buffer.byteLength(body) > 1024 * 64) {
+        oversized = true; body = "";
         reject(new Error("Ukuran request terlalu besar"));
       }
     });
+    req.on("aborted", () => reject(new Error("Request dibatalkan")));
     req.on("end", () => {
       try {
         resolve(body ? JSON.parse(body) : {});
@@ -56,6 +61,29 @@ export function createHttpServer(
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     const method = req.method || "GET";
 
+    // Every endpoint fails closed, including QR and status.
+    const auth = req.headers.authorization || "";
+    const expected = Buffer.from(`Bearer ${config.secret}`);
+    const supplied = Buffer.from(auth);
+    if (!config.secret || supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
+      return sendJsonResponse(res, 401, { ok: false, error: "Otorisasi tidak valid" });
+    }
+    if ((["/status", "/logout"].includes(url.pathname) || req.headers["x-wa-village-id"] !== undefined) &&
+        (!process.env.WA_GATEWAY_VILLAGE_ID || req.headers["x-wa-village-id"] !== process.env.WA_GATEWAY_VILLAGE_ID)) {
+      return sendJsonResponse(res, 403, { ok: false, error: "Lingkup tidak valid" });
+    }
+    if (url.pathname === "/status" && method === "GET") {
+      return sendJsonResponse(res, 200, sessionManager.getDashboardStatus());
+    }
+    if (url.pathname === "/logout" && method === "POST") {
+      try {
+        const body = await parseJsonBody(req);
+        if (body?.confirm !== true || Object.keys(body).length !== 1) return sendJsonResponse(res, 400, { ok: false });
+        await sessionManager.logout();
+        return sendJsonResponse(res, 200, { ok: true });
+      } catch { return sendJsonResponse(res, 503, { ok: false, error: "Penggantian sesi gagal" }); }
+    }
+
     // 1. Health check
     if (url.pathname === "/health" && method === "GET") {
       const status = sessionManager.getStatus();
@@ -78,17 +106,6 @@ export function createHttpServer(
       });
     }
 
-    // Cek otorisasi untuk endpoint pengiriman
-    if (config.secret) {
-      const authHeader = req.headers["authorization"] || "";
-      const token = authHeader.replace(/^Bearer\s+/i, "");
-      if (token !== config.secret) {
-        return sendJsonResponse(res, 401, {
-          ok: false,
-          error: "Otorisasi tidak valid",
-        });
-      }
-    }
 
     // 3. POST /send - Kirim pesan teks mentah
     if (url.pathname === "/send" && method === "POST") {
@@ -96,7 +113,7 @@ export function createHttpServer(
         const body = await parseJsonBody(req);
         const { to, text } = body;
 
-        if (!to || !text) {
+        if (typeof to !== "string" || !/^(?:\+?62|0|8)[0-9]{8,13}$/.test(to) || typeof text !== "string" || !text.trim() || text.length > 2000 || /[\p{Extended_Pictographic}\p{Regional_Indicator}\u200d\ufe0f\u20e3]/u.test(text)) {
           return sendJsonResponse(res, 400, {
             ok: false,
             error: "Parameter 'to' dan 'text' wajib disertakan",
@@ -106,7 +123,7 @@ export function createHttpServer(
         const sock = sessionManager.getSocket();
         const status = sessionManager.getStatus();
         if (!sock || !status.connected) {
-          logger.warn({ to }, "Gagal mengirim: WhatsApp belum terhubung");
+          logger.warn("Gagal mengirim: WhatsApp belum terhubung");
           return sendJsonResponse(res, 503, {
             ok: false,
             error: "WhatsApp gateway belum terhubung ke sesi aktif",
@@ -115,12 +132,14 @@ export function createHttpServer(
 
         const jid = normalizePhoneToJid(to);
         await sock.sendMessage(jid, { text });
+        sessionManager.logs?.add("out", "sent");
 
-        logger.info({ to: jid }, "Pesan WhatsApp berhasil dikirim");
+        logger.info("Pesan WhatsApp berhasil dikirim");
         return sendJsonResponse(res, 200, { ok: true, recipient: jid });
       } catch (err: any) {
-        logger.error({ error: err.message }, "Kesalahan pada POST /send");
-        return sendJsonResponse(res, 500, { ok: false, error: err.message });
+        sessionManager.logs?.add("out", "failed");
+        logger.error("Kesalahan pada POST /send");
+        return sendJsonResponse(res, 500, { ok: false, error: "Pengiriman gagal" });
       }
     }
 
@@ -143,10 +162,8 @@ export function createHttpServer(
         const sockStatus = sessionManager.getStatus();
 
         if (!sock || !sockStatus.connected) {
-          logger.warn(
-            { to, ticket, status },
-            "Gateway belum terhubung saat mencoba mendispatch notifikasi",
-          );
+          logger.warn("Gateway belum terhubung saat mencoba mendispatch notifikasi");
+          sessionManager.logs?.add("out", "failed");
           return sendJsonResponse(res, 503, {
             ok: false,
             error: "WhatsApp gateway belum terhubung",
@@ -157,10 +174,8 @@ export function createHttpServer(
         const jid = normalizePhoneToJid(to);
         await sock.sendMessage(jid, { text: messageText });
 
-        logger.info(
-          { to: jid, ticket, status },
-          "Notifikasi status permohonan berhasil dikirim ke pemohon",
-        );
+        sessionManager.logs?.add("out", "sent");
+        logger.info("Notifikasi status permohonan berhasil dikirim ke pemohon");
         return sendJsonResponse(res, 200, {
           ok: true,
           recipient: jid,
