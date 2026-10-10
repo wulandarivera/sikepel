@@ -11,8 +11,12 @@ import {
 
 type Receipt = {
   ticket: string;
-  tracking_token: string;
-  tracking_expires_at: string;
+  tracking_token?: string;
+  tracking_expires_at?: string;
+  created_at?: string;
+  tracking_url?: string;
+  whatsapp_url?: string;
+  whatsapp_message?: string;
 };
 
 const initial = {
@@ -430,46 +434,64 @@ export default function ApplyPage() {
 
   function saveReceipt() {
     if (!receipt) return;
-    const text = `Akses privat permohonan Kelurahan Cibodas\nNomor tiket: ${receipt.ticket}\nKode akses: ${receipt.tracking_token}\nBerlaku sampai: ${receipt.tracking_expires_at}\nSimpan rahasia. Gunakan tiket dan kode akses di /mandiri/lacak.\n`;
+    const dateStr = receipt.created_at ? new Date(receipt.created_at).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
+    const text = `Bukti Permohonan Surat Kelurahan Cibodas\n` +
+      `Nomor Tiket: ${receipt.ticket}\n` +
+      `Tanggal Pengajuan: ${dateStr}\n` +
+      `Petunjuk Lacak: Gunakan Nomor Tiket dan Tanggal Lahir pemohon untuk memeriksa status.\n` +
+      `Tautan Pelacakan: https://mandiri.sikepel.biz.id/lacak?tiket=${receipt.ticket}\n`;
     const url = URL.createObjectURL(
       new Blob([text], { type: 'text/plain;charset=utf-8' })
     );
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'akses-permohonan.txt';
+    a.download = `bukti-permohonan-${receipt.ticket}.txt`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   if (receipt) {
+    const trackingLink = `/mandiri/lacak?tiket=${encodeURIComponent(receipt.ticket)}`;
     return (
       <section className="panel">
         <h1 ref={title} tabIndex={-1}>
           Permohonan diterima
         </h1>
         <p>Menunggu verifikasi petugas. Ini bukan bukti surat telah diterbitkan.</p>
-        <dl>
-          <dt>Nomor tiket</dt>
-          <dd>{receipt.ticket}</dd>
-          <dt>Kode akses rahasia</dt>
-          <dd className="secret" style={{ wordBreak: 'break-all' }}>
-            {receipt.tracking_token}
-          </dd>
-          <dt>Berlaku sampai</dt>
-          <dd>
-            {new Date(receipt.tracking_expires_at).toLocaleString('id-ID')}
-          </dd>
-        </dl>
-        <p className="notice">
-          Unduh atau catat tiket dan kode akses sebelum meninggalkan halaman.
-          Kode tidak disimpan otomatis pada perangkat. Siapa pun yang memegangnya
-          dapat melacak tiket. Jangan bagikan ke orang lain.
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-light)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Nomor Tiket Anda
+          </div>
+          <div className="receipt-ticket">{receipt.ticket}</div>
+        </div>
+
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-light)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Tanggal Pengajuan
+          </div>
+          <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-main)', marginTop: '4px' }}>
+            {new Date(receipt.created_at || Date.now()).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'left', background: '#f8fafc', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '20px', marginBottom: '24px' }}>
+          <div style={{ fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '6px' }}>
+            Petunjuk Lacak:
+          </div>
+          <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
+            Gunakan Nomor Tiket dan Tanggal Lahir pemohon untuk memeriksa status.
+          </p>
+        </div>
+
+        <p className="notice" style={{ textAlign: 'left' }}>
+          <strong>Penting:</strong> Simpan nomor tiket ini. Untuk melacak status permohonan, gunakan Tanggal Lahir pemohon yang didaftarkan saat pengajuan.
         </p>
-        <div className="actions" style={{ flexWrap: 'wrap' }}>
+
+        <div className="actions" style={{ justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <button type="button" onClick={saveReceipt}>
-            Simpan akses tiket
+            Unduh Bukti
           </button>
-          <Link className="button secondary" href="/mandiri/lacak">
+          <Link className="button secondary" href={trackingLink}>
             Lacak Permohonan
           </Link>
         </div>

@@ -1,17 +1,63 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { portalFetch, statusView } from '../../../lib/mandiri-ui';
-type Tracked={ticket:string;type_name:string;status:string;created_at:string;revision_note?:string};
-export default function TrackPage(){
-  const [ticket,setTicket]=useState(''),[token,setToken]=useState(''),[result,setResult]=useState<Tracked|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
-  async function track(){setBusy(true);setError('');setResult(null);try{setResult(await portalFetch<Tracked>('/api/mandiri/track/'+encodeURIComponent(ticket.trim()),{headers:{Authorization:'Bearer '+token.trim()}}));}catch(e){setError(e instanceof Error?e.message:'Pelacakan gagal.');}finally{setBusy(false);}}
-  const view=result?statusView(result.status):null;
+
+type Tracked = {
+  ticket: string;
+  type_name: string;
+  status: string;
+  created_at: string;
+  revision_note?: string;
+};
+
+export default function TrackPage() {
+  const [ticket, setTicket] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [result, setResult] = useState<Tracked | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tiketParam = params.get('tiket') || params.get('ticket');
+      if (tiketParam) {
+        setTicket(tiketParam.toUpperCase().trim());
+      }
+    }
+  }, []);
+
+  async function track() {
+    setBusy(true);
+    setError('');
+    setResult(null);
+    try {
+      const cleanTicket = ticket.trim();
+      const cleanBirthDate = birthDate.trim();
+      const query = new URLSearchParams({ birth_date: cleanBirthDate }).toString();
+      setResult(await portalFetch<Tracked>(
+        '/api/mandiri/track/' + encodeURIComponent(cleanTicket) + '?' + query,
+        {
+          headers: {
+            'x-birth-date': cleanBirthDate,
+          },
+        }
+      ));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Pelacakan gagal.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const view = result ? statusView(result.status) : null;
+
   return (
     <>
       <div className="portal-page-header">
         <h1>Lacak Status Permohonan</h1>
         <p className="portal-lead">
-          Gunakan nomor tiket resmi dan kode akses rahasia 64-karakter yang Anda peroleh saat mengirimkan permohonan.
+          Gunakan nomor tiket resmi dan tanggal lahir pemohon yang didaftarkan saat mengajukan permohonan surat.
         </p>
       </div>
 
@@ -21,7 +67,7 @@ export default function TrackPage(){
         <h2 style={{ fontSize: '1.2rem', marginBottom: '16px' }}>Identifikasi Berkas Pelacakan</h2>
         <label>
           Nomor Tiket
-          <small>Format: TIK-YYYYMM-XXXX</small>
+          <small>Format: TIK-YYYYMM-XXXXXXXX</small>
           <input
             required
             aria-label="Nomor tiket"
@@ -34,27 +80,21 @@ export default function TrackPage(){
           />
         </label>
         <label>
-          Kode Akses Rahasia
-          <small>64 karakter heksadesimal dari bukti pengajuan</small>
+          Tanggal Lahir Pemohon
+          <small>Gunakan tanggal lahir yang didaftarkan saat pengajuan</small>
           <input
             required
-            aria-label="Kode akses rahasia"
-            type="password"
-            autoComplete="off"
-            spellCheck={false}
-            pattern="[a-f0-9]{64}"
-            minLength={64}
-            maxLength={64}
-            placeholder="Masukkan kode akses token"
-            value={token}
-            onChange={e => { setToken(e.target.value); setResult(null); }}
+            aria-label="Tanggal lahir pemohon"
+            type="date"
+            value={birthDate}
+            onChange={e => { setBirthDate(e.target.value); setResult(null); }}
           />
         </label>
         <div style={{ marginTop: '20px' }}>
-          <button aria-label="Lacak tiket" disabled={busy}>{busy ? 'Memeriksa status…' : 'Lacak tiket'}</button>
+          <button aria-label="Lacak status permohonan" disabled={busy}>{busy ? 'Memeriksa status...' : 'Lacak Permohonan'}</button>
         </div>
         <p className="notice" style={{ marginTop: '20px', fontSize: '0.85rem' }}>
-          Jaga kerahasiaan kode akses. Tiket atau kode akses yang salah maupun kedaluwarsa akan ditampilkan sebagai permohonan tidak ditemukan demi perlindungan privasi.
+          Pastikan nomor tiket dan tanggal lahir yang dimasukkan sesuai dengan data saat pengajuan surat.
         </p>
       </form>
 

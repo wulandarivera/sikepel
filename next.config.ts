@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 const config: NextConfig = {
   distDir: process.env.SIKEPEL_BUILD_DIR || ".next",
+  turbopack: {
+    root: path.resolve(__dirname, "..", ".."),
+  },
   outputFileTracingIncludes: {
     "/api/*": ["./templates/pernyataan-belum-menikah.docx"],
   },

@@ -20,8 +20,8 @@ test("mandiri: private proposals, token tracking, uploads, tenant isolation and 
   const village = randomUUID(), other = randomUUID(), type = randomUUID(), resident = randomUUID();
   const origin = "https://mandiri.sikepel.biz.id";
   process.env.MANDIRI_VILLAGE_ID = village;
-  async function call(route: string, method = "GET", body?: unknown, token?: string) {
-    const req = new Request(origin + "/api/mandiri/" + route, { method, headers: { origin, ...(token ? {authorization: "Bearer " + token} : {}) }, body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body) });
+  async function call(route: string, method = "GET", body?: unknown, token?: string, headers?: Record<string, string>) {
+    const req = new Request(origin + "/api/mandiri/" + route, { method, headers: { origin, ...(token ? {authorization: "Bearer " + token} : {}), ...(headers || {}) }, body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body) });
     return mandiriResponse(req, route, db);
   }
   try {
@@ -56,12 +56,32 @@ test("mandiri: private proposals, token tracking, uploads, tenant isolation and 
     assert.ok(ticket.wa_url, "wa_url is returned on submission");
     assert.match(ticket.wa_url, /^https:\/\/wa\.me\/62822222222\?text=/);
     assert.match(decodeURIComponent(ticket.wa_url), new RegExp(ticket.ticket));
+    assert.ok(ticket.whatsapp_url?.includes('wa.me/62822222222'));
+    assert.ok(ticket.whatsapp_message?.includes(ticket.ticket));
+    assert.ok(ticket.whatsapp_message?.includes('Tanggal Lahir'));
+    assert.ok(ticket.whatsapp_message?.includes('https://mandiri.sikepel.biz.id/lacak?tiket=' + ticket.ticket));
     assert.equal((await db.query("SELECT name,data FROM residents WHERE id=$1",[resident])).rows[0].name,'Rahasia');
     assert.equal((await db.query("SELECT data FROM residents WHERE id=$1",[resident])).rows[0].data.phone,'0811111111');
     const row = (await db.query('SELECT * FROM online_requests')).rows[0];
     assert.equal(row.resident_id,null); assert.notEqual(row.tracking_token_hash,ticket.tracking_token); assert.equal(row.form_data.resident.name,'Usulan');
     assert.equal((await call('track/'+ticket.ticket)).status,404);
-    assert.equal((await call('track/'+ticket.ticket,'GET',undefined,'wrong')).status,404);
+    const wrongRes = await call('track/'+ticket.ticket,'GET',undefined,'wrong');
+    assert.equal(wrongRes.status,404);
+    assert.equal((await wrongRes.json()).error, 'Nomor tiket atau tanggal lahir tidak sesuai.');
+    // Birth date tracking via query parameter
+    const trackedBirthQuery = await call('track/'+ticket.ticket+'?birth_date=2000-01-01');
+    assert.equal(trackedBirthQuery.status, 200);
+    assert.deepEqual(Object.keys(await trackedBirthQuery.json()).sort(),['created_at','status','ticket','type_name']);
+    // Birth date tracking via header
+    const trackedBirthHeader = await call('track/'+ticket.ticket,'GET',undefined,undefined,{'x-birth-date':'2000-01-01'});
+    assert.equal(trackedBirthHeader.status, 200);
+    // Birth date tracking via POST body
+    const trackedBirthPost = await call('track/'+ticket.ticket,'POST',{birth_date:'2000-01-01'});
+    assert.equal(trackedBirthPost.status, 200);
+    // Wrong birth date
+    const wrongBirth = await call('track/'+ticket.ticket+'?birth_date=1999-12-31');
+    assert.equal(wrongBirth.status, 404);
+    assert.equal((await wrongBirth.json()).error, 'Nomor tiket atau tanggal lahir tidak sesuai.');
     const tracked = await call('track/'+ticket.ticket,'GET',undefined,ticket.tracking_token);
     assert.deepEqual(Object.keys(await tracked.json()).sort(),['created_at','status','ticket','type_name']);
     assert.equal((await call('track/TIK-202610-DEADBEEF','GET',undefined,ticket.tracking_token)).status,404);

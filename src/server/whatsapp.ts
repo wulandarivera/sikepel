@@ -34,6 +34,7 @@ export function formatWhatsAppMessage(payload: PermohonanNotificationPayload): s
         `${nama}Salam, konfirmasi permohonan surat ${jenis} Anda berhasil diajukan.`,
         "",
         `Nomor tiket pelacakan: ${code}`,
+        "Untuk melacak status permohonan, gunakan Tanggal Lahir pemohon yang didaftarkan saat pengajuan.",
         `Tautan cek status: https://mandiri.sikepel.biz.id/lacak?tiket=${encodeURIComponent(code)}`,
         "",
         "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas.",

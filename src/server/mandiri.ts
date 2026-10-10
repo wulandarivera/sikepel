@@ -184,7 +184,8 @@ export async function createPermohonanMandiri(
 
   let cleanPhone = input.contact_phone.replace(/[^0-9]/g, "");
   if (cleanPhone.startsWith("0")) cleanPhone = "62" + cleanPhone.slice(1);
-  const waMsg = `Halo ${input.resident.name}, permohonan surat Anda di Kelurahan Cibodas telah berhasil diajukan dengan nomor tiket: ${ticket}. Kode akses: ${token}. Petunjuk: Simpan nomor tiket dan kode akses ini untuk melacak permohonan Anda. Terima kasih.`;
+  const trackingUrl = `https://mandiri.sikepel.biz.id/lacak?tiket=${ticket}`;
+  const waMsg = `Permohonan Surat Kelurahan Cibodas\nNomor Tiket: ${ticket}\n\nUntuk melacak status permohonan, gunakan Tanggal Lahir pemohon yang didaftarkan saat pengajuan.\n\nTautan langsung menuju tracking berdasarkan nomor tiket:\n${trackingUrl}`;
   const wa_url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMsg)}` : "";
 
   return {
@@ -193,7 +194,10 @@ export async function createPermohonanMandiri(
     created_at: row.created_at,
     tracking_token: token,
     tracking_expires_at: row.tracking_expires_at,
-    wa_url,
+    tracking_url: trackingUrl,
+    wa_url: wa_url || undefined,
+    whatsapp_url: wa_url || undefined,
+    whatsapp_message: waMsg,
   };
 }
 
@@ -269,20 +273,51 @@ export async function mandiriResponse(
       return response(result, 201);
     }
 
-    if (route.startsWith("track/") && req.method === "GET") {
-      const token = req.headers
-        .get("authorization")
-        ?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
-      await limited(db, "track:" + village + ":" + hashToken(token || "anonymous"), 60);
-      const ticket = route.slice(6);
-      if (!token || !/^TIK-\d{6}-[A-F0-9]{8}$/.test(ticket))
-        throw new AppError(404, "Tiket tidak ditemukan.");
+    if (route.startsWith("track/") && (req.method === "GET" || req.method === "POST")) {
+      const ticket = route.slice(6).split("?")[0];
+      if (!/^TIK-\d{6}-[A-F0-9]{8}$/.test(ticket))
+        throw new AppError(404, "Nomor tiket atau tanggal lahir tidak sesuai.");
+
+      const parsedUrl = new URL(req.url, "http://localhost");
+      let birthDate =
+        parsedUrl.searchParams.get("birth_date") ||
+        parsedUrl.searchParams.get("birthDate") ||
+        req.headers.get("x-birth-date") ||
+        "";
+      const legacyToken =
+        req.headers.get("authorization")?.match(/^Bearer\s+([a-f0-9]{64})$/i)?.[1] || "";
+      const bearerMatch = req.headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
+      if (!birthDate && bearerMatch && /^\d{4}-\d{2}-\d{2}$/.test(bearerMatch)) {
+        birthDate = bearerMatch;
+      }
+      if (req.method === "POST" && req.body) {
+        try {
+          const rawBytes = await body(req);
+          if (rawBytes.length > 0) {
+            const parsed = JSON.parse(rawBytes.toString());
+            if (parsed && typeof parsed.birth_date === "string") {
+              birthDate = parsed.birth_date;
+            }
+          }
+        } catch {
+          // ignore invalid body
+        }
+      }
+      birthDate = birthDate.trim();
+      await limited(
+        db,
+        "track:" + village + ":" + ticket + ":" + hashToken(birthDate || legacyToken || "anon"),
+        60,
+      );
+      if (!birthDate && !legacyToken)
+        throw new AppError(404, "Nomor tiket atau tanggal lahir tidak sesuai.");
+
       const row = await one(
         db,
-        `SELECT r.ticket_code AS ticket,t.name AS type_name,r.status,r.created_at,r.revision_note FROM online_requests r JOIN letter_types t ON t.id=r.type_id WHERE r.village_id=$1 AND r.ticket_code=$2 AND r.tracking_token_hash=$3 AND r.tracking_expires_at>now()`,
-        [village, ticket, hashToken(token)],
+        `SELECT r.ticket_code AS ticket,t.name AS type_name,r.status,r.created_at,r.revision_note FROM online_requests r JOIN letter_types t ON t.id=r.type_id WHERE r.village_id=$1 AND r.ticket_code=$2 AND (($3 <> '' AND r.form_data->'resident'->>'birth_date'=$3) OR ($4 <> '' AND r.tracking_token_hash=$4)) AND r.tracking_expires_at>now()`,
+        [village, ticket, birthDate, legacyToken ? hashToken(legacyToken) : ""],
       );
-      if (!row) throw new AppError(404, "Tiket tidak ditemukan.");
+      if (!row) throw new AppError(404, "Nomor tiket atau tanggal lahir tidak sesuai.");
       if (row.revision_note === null) delete row.revision_note;
       return response(row);
     }
