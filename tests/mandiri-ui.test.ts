@@ -9,6 +9,8 @@ test('mandiri root rewrites without opening administrative pages', () => {
   assert.equal(root.headers.get('x-middleware-rewrite'), 'https://mandiri.sikepel.biz.id/mandiri');
   for (const route of ['/login', '/app', '/api/bootstrap']) assert.equal(proxy(new NextRequest('https://mandiri.sikepel.biz.id'+route)).status,404);
   for (const asset of ['/assets/icon.webp', '/assets/logo.webp']) assert.equal(proxy(new NextRequest('https://mandiri.sikepel.biz.id'+asset)).status,200);
+  assert.equal(proxy(new NextRequest('https://mandiri.sikepel.biz.id/_next/image?url=%2Fassets%2Flogo.webp&w=640&q=75')).status,200);
+  assert.equal(proxy(new NextRequest('https://wa.sikepel.biz.id/_next/image?url=%2Fassets%2Flogo.webp&w=640&q=75')).status,200);
   assert.equal(proxy(new NextRequest('https://sikepel.biz.id/')).headers.get('x-middleware-rewrite'),null);
 });
 test('status labels do not fabricate signing or pickup readiness', () => {
