@@ -1,4 +1,5 @@
 node_modules/
+node_modules
 .next/
 .next-vercel-check/
 .vercel/
@@ -15,6 +16,8 @@ public/pdf.worker.min.mjs
 temp_backup/
 backups/
 reference/verification/
+reference/wa-verification/
+screenshots/
 *.log
 /core
 /core.*
