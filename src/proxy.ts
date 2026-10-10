@@ -13,6 +13,7 @@ export function proxy(request: NextRequest) {
       destination.pathname = "/wa";
       return NextResponse.redirect(destination);
     }
+    const imageUrl = request.nextUrl.searchParams.get("url") || "";
     const allowed = [
       "/wa",
       "/wa/login",
@@ -26,7 +27,7 @@ export function proxy(request: NextRequest) {
       pathname === "/api/wa/auto-replies" ||
       pathname.startsWith("/api/wa/auto-replies/") ||
       pathname.startsWith("/_next/static/") ||
-      pathname.startsWith("/_next/image");
+      (pathname === "/_next/image" && imageUrl.startsWith("/assets/"));
     if (!allowed) return new NextResponse("Tidak ditemukan.", { status: 404, headers: { "Cache-Control": "no-store" } });
   }
   if (hosts.includes("mandiri.sikepel.biz.id")) {
