@@ -3,7 +3,16 @@ import { type DB, one } from "./db";
 export interface PermohonanNotificationPayload {
   to: string;
   ticket: string;
-  status: "APPROVED" | "COMPLETED" | "SIAP_DIAMBIL" | "REJECTED" | "NEEDS_REVISION";
+  status:
+    | "SUBMITTED"
+    | "TIKET_BARU"
+    | "TIKET BARU"
+    | "PENDING_VERIFICATION"
+    | "APPROVED"
+    | "COMPLETED"
+    | "SIAP_DIAMBIL"
+    | "REJECTED"
+    | "NEEDS_REVISION";
   type_name: string;
   resident_name?: string;
   note?: string;
@@ -15,6 +24,21 @@ export function formatWhatsAppMessage(payload: PermohonanNotificationPayload): s
   const jenis = payload.type_name || "Surat Keterangan";
 
   switch (payload.status) {
+    case "SUBMITTED":
+    case "TIKET_BARU":
+    case "TIKET BARU":
+    case "PENDING_VERIFICATION":
+      return [
+        "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
+        "",
+        `${nama}Salam, konfirmasi permohonan surat ${jenis} Anda berhasil diajukan.`,
+        "",
+        `Nomor tiket pelacakan: ${code}`,
+        `Tautan cek status: https://mandiri.sikepel.biz.id/lacak?tiket=${encodeURIComponent(code)}`,
+        "",
+        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas.",
+      ].join("\n");
+
     case "APPROVED":
       return [
         "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
@@ -51,6 +75,8 @@ export function formatWhatsAppMessage(payload: PermohonanNotificationPayload): s
         "",
         "Tautan Perbaikan Mandiri:",
         `https://mandiri.sikepel.biz.id/lacak?tiket=${encodeURIComponent(code)}`,
+        "",
+        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas.",
       ].join("\n");
 
     case "REJECTED":
@@ -76,7 +102,7 @@ export function formatWhatsAppMessage(payload: PermohonanNotificationPayload): s
   }
 }
 
-export async function notifyPermohonanStatus(
+export async function dispatchWhatsAppNotification(
   payload: PermohonanNotificationPayload,
 ): Promise<{ ok: boolean; error?: string }> {
   if (!payload.to || !payload.ticket) {
@@ -98,7 +124,10 @@ export async function notifyPermohonanStatus(
     const res = await fetch(`${gatewayUrl}/notify`, {
       method: "POST",
       headers,
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        message: formatWhatsAppMessage(payload),
+      }),
       signal: AbortSignal.timeout(3000),
     });
 
@@ -116,6 +145,8 @@ export async function notifyPermohonanStatus(
     return { ok: false, error: err.message };
   }
 }
+
+export const notifyPermohonanStatus = dispatchWhatsAppNotification;
 
 export async function getTicketStatusForBot(db: DB, ticketCode: string) {
   const normalized = ticketCode.trim().toUpperCase();
