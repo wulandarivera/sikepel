@@ -354,9 +354,9 @@
   margin: 16px 0 24px;
   padding: 20px 16px 16px;
   background: #ffffff;
-  border: 1.5px solid var(--line);
+  border: 1px solid #e2e8f0;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 3px rgba(8, 41, 83, 0.05);
 }
 
 .stepper {
@@ -378,6 +378,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   flex: 1;
+  min-width: 0;
   position: relative;
 }
 
@@ -405,16 +406,20 @@
   justify-content: center;
   font-size: 0.85rem;
   font-weight: 700;
-  background: var(--bg);
+  background: #ffffff;
   border: 2px solid var(--line);
   color: var(--muted);
   flex-shrink: 0;
+  position: relative;
   z-index: 2;
   transition: all 0.2s ease;
 }
 
 .stepper-label {
+  position: relative;
   z-index: 2;
+  font-size: 0.85rem;
+  line-height: 1.25;
 }
 
 .stepper-item.active {
@@ -751,6 +756,33 @@
     gap: 12px;
   }
 
+  .portal-brand {
+    gap: 10px;
+    max-width: 100%;
+  }
+
+  .portal-brand-logo {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+  }
+
+  .portal-brand-title {
+    font-size: 1.15rem;
+    letter-spacing: -0.4px;
+    white-space: nowrap;
+  }
+
+  .portal-brand-title .portal-brand-tag {
+    font-size: 0.85rem;
+  }
+
+  .portal-brand-subtitle {
+    font-size: 0.68rem;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
   .portal header nav {
     width: 100%;
     justify-content: space-between;
@@ -762,7 +794,7 @@
   }
 
   .portal main {
-    padding: 24px 16px 40px;
+    padding: 20px 14px 40px;
   }
 
   .portal-cards {
@@ -773,15 +805,59 @@
   .portal form.panel,
   .portal section.panel {
     padding: 20px 16px;
+    border-radius: var(--radius-md);
+    margin: 18px 0;
+  }
+
+  .portal input,
+  .portal select,
+  .portal textarea {
+    font-size: 0.95rem;
+  }
+
+  .stepper-container {
+    padding: 14px 10px;
+    margin: 12px 0 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md);
   }
 
   .stepper {
-    flex-direction: column;
-    gap: 12px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 4px;
   }
 
   .stepper-item {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
+    gap: 6px;
+    position: relative;
+  }
+
+  .stepper-item:not(:last-child)::after {
+    top: 15px;
+    height: 2px;
+    z-index: 1;
+  }
+
+  .stepper-num {
+    width: 30px;
+    height: 30px;
+    font-size: 0.8rem;
+    background: #ffffff;
+    z-index: 2;
+  }
+
+  .stepper-label {
+    font-size: 0.75rem;
+    line-height: 1.2;
+    word-break: normal;
+    overflow-wrap: normal;
+    hyphens: none;
+    z-index: 2;
   }
 
   .portal .actions {
