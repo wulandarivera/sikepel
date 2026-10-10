@@ -182,12 +182,18 @@ export async function createPermohonanMandiri(
     resident_name: input.resident.name,
   });
 
+  let cleanPhone = input.contact_phone.replace(/[^0-9]/g, "");
+  if (cleanPhone.startsWith("0")) cleanPhone = "62" + cleanPhone.slice(1);
+  const waMsg = `Halo ${input.resident.name}, permohonan surat Anda di Kelurahan Cibodas telah berhasil diajukan dengan nomor tiket: ${ticket}. Kode akses: ${token}. Petunjuk: Simpan nomor tiket dan kode akses ini untuk melacak permohonan Anda. Terima kasih.`;
+  const wa_url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMsg)}` : "";
+
   return {
     ticket,
     status: row.status,
     created_at: row.created_at,
     tracking_token: token,
     tracking_expires_at: row.tracking_expires_at,
+    wa_url,
   };
 }
 
@@ -238,7 +244,6 @@ export async function mandiriResponse(
       // Identity knowledge alone never authorizes disclosure of existing resident data.
       return response({ manual_entry: true });
     }
-
     if (route === "request" && req.method === "POST") {
       const bytes = await body(req);
       let raw: unknown,

@@ -58,6 +58,7 @@ export const globalPlaceholders = [
   "nama_penandatangan",
   "nip_penandatangan",
   "jabatan_penandatangan",
+  "jabatan_detail",
   "nama_surat",
 ];
 export function validateTemplate(

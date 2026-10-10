@@ -53,6 +53,9 @@ test("mandiri: private proposals, token tracking, uploads, tenant isolation and 
     const input = {type_id:type,resident:{nik:'1234567890123456',name:'Usulan',birth_date:'2000-01-01',birth_place:'Tangerang',gender:'Laki-laki',religion:'Islam',marital_status:'Kawin',occupation:'Wiraswasta',address:'Alamat baru',rt:'001',rw:'002'},contact_phone:'0822222222',form_data:{purpose:'Pengajuan'}};
     const r = await call('request','POST',input); assert.equal(r.status,201);
     const ticket = await r.json(); assert.match(ticket.ticket,/^TIK-\d{6}-[A-F0-9]{8}$/); assert.equal(ticket.tracking_token.length,64);
+    assert.ok(ticket.wa_url, "wa_url is returned on submission");
+    assert.match(ticket.wa_url, /^https:\/\/wa\.me\/62822222222\?text=/);
+    assert.match(decodeURIComponent(ticket.wa_url), new RegExp(ticket.ticket));
     assert.equal((await db.query("SELECT name,data FROM residents WHERE id=$1",[resident])).rows[0].name,'Rahasia');
     assert.equal((await db.query("SELECT data FROM residents WHERE id=$1",[resident])).rows[0].data.phone,'0811111111');
     const row = (await db.query('SELECT * FROM online_requests')).rows[0];

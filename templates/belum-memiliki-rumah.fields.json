@@ -24,14 +24,8 @@
     "required": true
   },
   {
-    "key": "jabatan_detail",
-    "label": "Keterangan tambahan jabatan (opsional)",
-    "type": "text",
-    "required": false
-  },
-  {
     "key": "catatan",
-    "label": "Catatan petugas (tidak tercetak)",
+    "label": "Catatan Untuk Petugas (tidak tercetak)",
     "type": "textarea",
     "required": false
   }

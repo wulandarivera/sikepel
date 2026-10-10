@@ -29,7 +29,7 @@ async function main() {
     { key: "tanggal_pengantar_rt", label: "Tanggal surat pengantar RT/RW (opsional)", type: "date", required: false },
     { key: "keperluan", label: "Peruntukan surat", type: "textarea", required: true },
     { key: "jabatan_detail", label: "Keterangan tambahan jabatan (opsional)", type: "text", required: false },
-    { key: "catatan", label: "Catatan petugas (tidak tercetak)", type: "textarea", required: false },
+    { key: "catatan", label: "Catatan Untuk Petugas (tidak tercetak)", type: "textarea", required: false },
   );
   await fs.writeFile("templates/suami-istri.fields.json", JSON.stringify(fields, null, 2));
   const bytes = await fs.readFile("templates/suami-istri.docx");

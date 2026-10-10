@@ -521,8 +521,8 @@ function LetterForm({
                 </Field>
               </div>
             </div>
-            <section className="stack section-gap" aria-label="Catatan Petugas">
-              <h2>Catatan Petugas</h2>
+            <section className="stack section-gap" aria-label="Catatan Untuk Petugas">
+              <h2>Catatan Untuk Petugas</h2>
               <RequirementChecklist requirements={type.requirements} checks={checks} onChange={next => { setChecks(next); setDirty(true); }} />
               <Field name="reporter_phone" label="Nomor WhatsApp pelapor" hint="Opsional untuk penerbitan; wajib valid hanya saat membuka pesan WhatsApp."><input id="reporter_phone" type="tel" value={phone} onChange={e=>{setPhone(e.target.value);setDirty(true);}} /></Field>
               <WhatsAppRequirements phone={phone} name={resident.name} type={initial?.draft_ticket ? `${type.name} (tiket ${initial.draft_ticket})` : type.name} requirements={type.requirements || []} checks={checks} />

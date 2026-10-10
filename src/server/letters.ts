@@ -223,7 +223,7 @@ export async function allocateLetter(user: User, id: string) {
     await tx.query("SELECT id FROM letter_types WHERE id=$1 FOR UPDATE", [l.type_id]);
     const s = await makeSnapshot(tx, user, l);
     if (!requirementsComplete(s.requirements, l.form_data.requirement_checks))
-      throw new AppError(400, "Persyaratan wajib belum lengkap. Lengkapi checklist Catatan Petugas.");
+      throw new AppError(400, "Persyaratan wajib belum lengkap. Lengkapi checklist Catatan Untuk Petugas.");
     const normalized = (snapshot: any) =>
       snapshot
         ? JSON.parse(
