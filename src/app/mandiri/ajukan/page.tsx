@@ -13,7 +13,6 @@ type Receipt = {
   ticket: string;
   tracking_token: string;
   tracking_expires_at: string;
-  wa_url?: string;
 };
 
 const initial = {
@@ -225,7 +224,6 @@ export default function ApplyPage() {
   const [error, setError] = useState('');
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [consent, setConsent] = useState(false);
-  const [waLink, setWaLink] = useState('');
 
   const title = useRef<HTMLHeadingElement>(null);
   const lock = useRef(false);
@@ -417,26 +415,7 @@ export default function ApplyPage() {
         body,
       });
 
-      // Format WhatsApp notification URL
-      const cleanPhone = contact.replace(/[^0-9]/g, '').replace(/^0/, '62');
-      const waMsg = `Halo ${resident.name}, permohonan surat Anda di Kelurahan Cibodas telah berhasil diajukan dengan nomor tiket: ${res.ticket}. Kode akses: ${res.tracking_token}. Petunjuk: Simpan nomor tiket dan kode akses ini untuk memeriksa status di menu Lacak Permohonan. Terima kasih.`;
-      const generatedWaUrl = cleanPhone
-        ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMsg)}`
-        : '';
-
-      const finalWaUrl = res.wa_url || generatedWaUrl;
-      setWaLink(finalWaUrl);
       setReceipt(res);
-
-      // Langsung picu notifikasi WhatsApp konfirmasi pengajuan berhasil
-      if (finalWaUrl && typeof window !== 'undefined') {
-        try {
-          window.open(finalWaUrl, '_blank');
-        } catch {
-          // Abaikan jika browser popup blocker aktif
-        }
-      }
-
       setResident(initial);
       setContact('');
       setFields({});
@@ -481,35 +460,6 @@ export default function ApplyPage() {
             {new Date(receipt.tracking_expires_at).toLocaleString('id-ID')}
           </dd>
         </dl>
-        {waLink && (
-          <div
-            className="notice"
-            style={{
-              background: '#f0fdf4',
-              borderColor: '#bbf7d0',
-              color: '#166534',
-            }}
-          >
-            <p style={{ margin: '0 0 10px 0', fontWeight: 600 }}>
-              Notifikasi WhatsApp konfirmasi pengajuan dengan nomor tiket dan petunjuk telah dipicu ke nomor kontak Anda.
-            </p>
-            <a
-              href={waLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="button"
-              style={{
-                background: '#16a34a',
-                borderColor: '#16a34a',
-                color: '#ffffff',
-                textDecoration: 'none',
-                display: 'inline-block',
-              }}
-            >
-              Buka WhatsApp Konfirmasi
-            </a>
-          </div>
-        )}
         <p className="notice">
           Unduh atau catat tiket dan kode akses sebelum meninggalkan halaman.
           Kode tidak disimpan otomatis pada perangkat. Siapa pun yang memegangnya
