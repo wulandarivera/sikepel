@@ -50,7 +50,7 @@ test("mandiri: private proposals, token tracking, uploads, tenant isolation and 
       assert.equal(r.status,200); assert.equal(r.headers.get('cache-control'),'no-store');
       assert.deepEqual(await r.json(),{manual_entry:true});
     }
-    const input = {type_id:type,resident:{nik:'1234567890123456',name:'Usulan',birth_date:'2000-01-01',address:'Alamat baru'},contact_phone:'0822222222',form_data:{purpose:'Pengajuan'}};
+    const input = {type_id:type,resident:{nik:'1234567890123456',name:'Usulan',birth_date:'2000-01-01',birth_place:'Tangerang',gender:'Laki-laki',religion:'Islam',marital_status:'Kawin',occupation:'Wiraswasta',address:'Alamat baru',rt:'001',rw:'002'},contact_phone:'0822222222',form_data:{purpose:'Pengajuan'}};
     const r = await call('request','POST',input); assert.equal(r.status,201);
     const ticket = await r.json(); assert.match(ticket.ticket,/^TIK-\d{6}-[A-F0-9]{8}$/); assert.equal(ticket.tracking_token.length,64);
     assert.equal((await db.query("SELECT name,data FROM residents WHERE id=$1",[resident])).rows[0].name,'Rahasia');
