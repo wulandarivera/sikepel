@@ -37,6 +37,16 @@ export function proxy(request: NextRequest) {
       destination.pathname = "/mandiri";
       return NextResponse.rewrite(destination);
     }
+    if (pathname === "/ajukan" || pathname.startsWith("/ajukan/")) {
+      const destination = request.nextUrl.clone();
+      destination.pathname = pathname.replace(/^\/ajukan/, "/mandiri/ajukan");
+      return NextResponse.rewrite(destination);
+    }
+    if (pathname === "/lacak" || pathname.startsWith("/lacak/")) {
+      const destination = request.nextUrl.clone();
+      destination.pathname = pathname.replace(/^\/lacak/, "/mandiri/lacak");
+      return NextResponse.rewrite(destination);
+    }
     const allowed =
       pathname === "/mandiri" ||
       pathname.startsWith("/mandiri/") ||

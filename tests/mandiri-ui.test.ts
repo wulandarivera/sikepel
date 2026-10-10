@@ -7,6 +7,10 @@ import { NextRequest } from 'next/server';
 test('mandiri root rewrites without opening administrative pages', () => {
   const root = proxy(new NextRequest('https://mandiri.sikepel.biz.id/'));
   assert.equal(root.headers.get('x-middleware-rewrite'), 'https://mandiri.sikepel.biz.id/mandiri');
+  const ajukan = proxy(new NextRequest('https://mandiri.sikepel.biz.id/ajukan'));
+  assert.equal(ajukan.headers.get('x-middleware-rewrite'), 'https://mandiri.sikepel.biz.id/mandiri/ajukan');
+  const lacak = proxy(new NextRequest('https://mandiri.sikepel.biz.id/lacak'));
+  assert.equal(lacak.headers.get('x-middleware-rewrite'), 'https://mandiri.sikepel.biz.id/mandiri/lacak');
   for (const route of ['/login', '/app', '/api/bootstrap']) assert.equal(proxy(new NextRequest('https://mandiri.sikepel.biz.id'+route)).status,404);
   for (const asset of ['/assets/icon.webp', '/assets/logo.webp']) assert.equal(proxy(new NextRequest('https://mandiri.sikepel.biz.id'+asset)).status,200);
   assert.equal(proxy(new NextRequest('https://mandiri.sikepel.biz.id/_next/image?url=%2Fassets%2Flogo.webp&w=640&q=75')).status,200);
