@@ -7,6 +7,9 @@ import {
   type StatusNotificationPayload,
 } from "./formatters.js";
 import type { WhatsAppSessionManager } from "./session.js";
+import { getAutoReplyStore, cleanTextNoEmoji, type AutoReplyMatchType } from "./auto-replies.js";
+
+const EMOJI_REGEX = /[\p{Extended_Pictographic}\p{Regional_Indicator}\u200d\ufe0f\u20e3]/u;
 
 export function normalizePhoneToJid(phone: string): string {
   let cleaned = phone.replace(/\D/g, "");
@@ -68,7 +71,8 @@ export function createHttpServer(
     if (!config.secret || supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
       return sendJsonResponse(res, 401, { ok: false, error: "Otorisasi tidak valid" });
     }
-    if ((["/status", "/logout"].includes(url.pathname) || req.headers["x-wa-village-id"] !== undefined) &&
+    const isAutoReplies = url.pathname === "/auto-replies" || url.pathname.startsWith("/auto-replies/");
+    if ((["/status", "/logout"].includes(url.pathname) || isAutoReplies || req.headers["x-wa-village-id"] !== undefined) &&
         (!process.env.WA_GATEWAY_VILLAGE_ID || req.headers["x-wa-village-id"] !== process.env.WA_GATEWAY_VILLAGE_ID)) {
       return sendJsonResponse(res, 403, { ok: false, error: "Lingkup tidak valid" });
     }
@@ -82,6 +86,113 @@ export function createHttpServer(
         await sessionManager.logout();
         return sendJsonResponse(res, 200, { ok: true });
       } catch { return sendJsonResponse(res, 503, { ok: false, error: "Penggantian sesi gagal" }); }
+    }
+
+    // Auto-replies API
+    if (url.pathname === "/auto-replies" && method === "GET") {
+      try {
+        const store = getAutoReplyStore();
+        await store.init();
+        return sendJsonResponse(res, 200, { ok: true, data: store.getAll() });
+      } catch {
+        return sendJsonResponse(res, 500, { ok: false, error: "Gagal membaca daftar balasan otomatis" });
+      }
+    }
+
+    if (url.pathname === "/auto-replies" && method === "POST") {
+      try {
+        const body = await parseJsonBody(req);
+        const { keyword, match_type, reply_text, is_active, created_by } = body || {};
+        if (typeof keyword !== "string" || !keyword.trim() || keyword.trim().length > 100) {
+          return sendJsonResponse(res, 400, { ok: false, error: "Kata kunci wajib diisi (maksimal 100 karakter)" });
+        }
+        if (!["EXACT", "CONTAINS", "REGEX"].includes(match_type)) {
+          return sendJsonResponse(res, 400, { ok: false, error: "Tipe pencocokan tidak valid (pilih EXACT, CONTAINS, atau REGEX)" });
+        }
+        if (typeof reply_text !== "string" || !reply_text.trim() || reply_text.trim().length > 2000) {
+          return sendJsonResponse(res, 400, { ok: false, error: "Isi pesan balasan wajib diisi (maksimal 2000 karakter)" });
+        }
+        if (EMOJI_REGEX.test(keyword) || EMOJI_REGEX.test(reply_text)) {
+          return sendJsonResponse(res, 400, { ok: false, error: "Pesan dan kata kunci tidak boleh mengandung emoji" });
+        }
+        if (match_type === "REGEX") {
+          try {
+            new RegExp(keyword);
+          } catch {
+            return sendJsonResponse(res, 400, { ok: false, error: "Pola regex tidak valid" });
+          }
+        }
+        const store = getAutoReplyStore();
+        await store.init();
+        const created = await store.create({
+          keyword: cleanTextNoEmoji(keyword),
+          match_type: match_type as AutoReplyMatchType,
+          reply_text: cleanTextNoEmoji(reply_text),
+          is_active: is_active !== false,
+          created_by: typeof created_by === "string" ? cleanTextNoEmoji(created_by) : undefined,
+        });
+        return sendJsonResponse(res, 201, { ok: true, data: created });
+      } catch {
+        return sendJsonResponse(res, 500, { ok: false, error: "Gagal menambah balasan otomatis" });
+      }
+    }
+
+    if (url.pathname.startsWith("/auto-replies/") && method === "PUT") {
+      try {
+        const id = url.pathname.slice("/auto-replies/".length).trim();
+        if (!id) return sendJsonResponse(res, 400, { ok: false, error: "ID balasan wajib disertakan" });
+        const body = await parseJsonBody(req);
+        const { keyword, match_type, reply_text, is_active } = body || {};
+        if (keyword !== undefined && (typeof keyword !== "string" || !keyword.trim() || keyword.trim().length > 100)) {
+          return sendJsonResponse(res, 400, { ok: false, error: "Kata kunci tidak valid (maksimal 100 karakter)" });
+        }
+        if (match_type !== undefined && !["EXACT", "CONTAINS", "REGEX"].includes(match_type)) {
+          return sendJsonResponse(res, 400, { ok: false, error: "Tipe pencocokan tidak valid" });
+        }
+        if (reply_text !== undefined && (typeof reply_text !== "string" || !reply_text.trim() || reply_text.trim().length > 2000)) {
+          return sendJsonResponse(res, 400, { ok: false, error: "Isi pesan balasan tidak valid (maksimal 2000 karakter)" });
+        }
+        if ((keyword && EMOJI_REGEX.test(keyword)) || (reply_text && EMOJI_REGEX.test(reply_text))) {
+          return sendJsonResponse(res, 400, { ok: false, error: "Pesan dan kata kunci tidak boleh mengandung emoji" });
+        }
+        if (match_type === "REGEX" || (keyword && match_type === undefined)) {
+          try {
+            if (keyword) new RegExp(keyword);
+          } catch {
+            return sendJsonResponse(res, 400, { ok: false, error: "Pola regex tidak valid" });
+          }
+        }
+        const store = getAutoReplyStore();
+        await store.init();
+        const updated = await store.update(id, {
+          keyword: keyword !== undefined ? cleanTextNoEmoji(keyword) : undefined,
+          match_type: match_type as AutoReplyMatchType | undefined,
+          reply_text: reply_text !== undefined ? cleanTextNoEmoji(reply_text) : undefined,
+          is_active: is_active !== undefined ? Boolean(is_active) : undefined,
+        });
+        if (!updated) {
+          return sendJsonResponse(res, 404, { ok: false, error: "Template balasan tidak ditemukan" });
+        }
+        return sendJsonResponse(res, 200, { ok: true, data: updated });
+      } catch {
+        return sendJsonResponse(res, 500, { ok: false, error: "Gagal memperbarui balasan otomatis" });
+      }
+    }
+
+    if (url.pathname.startsWith("/auto-replies/") && method === "DELETE") {
+      try {
+        const id = url.pathname.slice("/auto-replies/".length).trim();
+        if (!id) return sendJsonResponse(res, 400, { ok: false, error: "ID balasan wajib disertakan" });
+        const store = getAutoReplyStore();
+        await store.init();
+        const deleted = await store.delete(id);
+        if (!deleted) {
+          return sendJsonResponse(res, 404, { ok: false, error: "Template balasan tidak ditemukan" });
+        }
+        return sendJsonResponse(res, 200, { ok: true });
+      } catch {
+        return sendJsonResponse(res, 500, { ok: false, error: "Gagal menghapus balasan otomatis" });
+      }
     }
 
     // 1. Health check

@@ -13,7 +13,19 @@ export function proxy(request: NextRequest) {
       destination.pathname = "/wa";
       return NextResponse.redirect(destination);
     }
-    const allowed = ["/wa", "/wa/login", "/api/login", "/api/wa/status", "/api/wa/send", "/api/wa/logout", "/assets/icon.webp", "/assets/logo.webp"].includes(pathname) || pathname.startsWith("/_next/static/");
+    const allowed = [
+      "/wa",
+      "/wa/login",
+      "/api/login",
+      "/api/wa/status",
+      "/api/wa/send",
+      "/api/wa/logout",
+      "/assets/icon.webp",
+      "/assets/logo.webp",
+    ].includes(pathname) ||
+      pathname === "/api/wa/auto-replies" ||
+      pathname.startsWith("/api/wa/auto-replies/") ||
+      pathname.startsWith("/_next/static/");
     if (!allowed) return new NextResponse("Tidak ditemukan.", { status: 404, headers: { "Cache-Control": "no-store" } });
   }
   if (hosts.includes("mandiri.sikepel.biz.id")) {

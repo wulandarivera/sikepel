@@ -23,6 +23,10 @@ if (config.databaseUrl) {
   }
 }
 
+export function getPool(): pg.Pool | null {
+  return pool;
+}
+
 export async function findTicketByCode(ticketCode: string): Promise<TicketRecord | null> {
   const normalizedCode = ticketCode.trim().toUpperCase();
 

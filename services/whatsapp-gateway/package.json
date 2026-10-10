@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "qr": "node dist/cli/qr.js",
-    "test": "node --import tsx scripts/test-bot-mock.ts && node --import tsx scripts/test-dispatcher-mock.ts && node scripts/verify-no-emoji.mjs && node --import tsx --test scripts/test-dashboard.ts && node --import tsx --test scripts/test-session-retry.ts"
+    "test": "node --import tsx scripts/test-bot-mock.ts && node --import tsx scripts/test-dispatcher-mock.ts && node scripts/verify-no-emoji.mjs && node --import tsx --test scripts/test-dashboard.ts && node --import tsx --test scripts/test-session-retry.ts && node --import tsx --test scripts/test-auto-replies.ts"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.19",

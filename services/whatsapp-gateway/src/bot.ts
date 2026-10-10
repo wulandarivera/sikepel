@@ -6,6 +6,7 @@ import {
   formatTicketStatusReply,
   formatTicketNotFoundReply,
 } from "./formatters.js";
+import { getAutoReplyStore } from "./auto-replies.js";
 
 const TICKET_REGEX = /\b(TIK-\d{6}-[A-Za-z0-9]{4,16})\b/i;
 
@@ -24,6 +25,7 @@ export function extractMessageText(msg: proto.IWebMessageInfo): string {
 
 export async function processMessageText(
   text: string,
+  senderInfo?: { name?: string; phone?: string },
 ): Promise<string | null> {
   const trimmed = text.trim();
   if (!trimmed) return null;
@@ -41,9 +43,18 @@ export async function processMessageText(
     return formatTicketNotFoundReply(ticketCode);
   }
 
+  // 2. Cek template balasan otomatis dinamis (custom auto-replies)
+  const store = getAutoReplyStore();
+  await store.init();
+  const customReply = store.findMatchingReply(trimmed, senderInfo);
+  if (customReply) {
+    logger.info("Membalas pesan warga menggunakan template balasan dinamis");
+    return customReply;
+  }
+
   const lower = trimmed.toLowerCase();
 
-  // 2. Opsi pengajuan surat langsung
+  // 3. Opsi pengajuan surat langsung
   if (
     lower.includes("ajukan") ||
     lower.includes("bikin surat") ||
@@ -90,7 +101,9 @@ export async function handleIncomingMessage(
     const text = extractMessageText(msg);
     if (!text) return;
 
-    const reply = await processMessageText(text);
+    const senderName = msg.pushName || "";
+    const senderPhone = jid ? jid.replace(/@.*$/, "") : "";
+    const reply = await processMessageText(text, { name: senderName, phone: senderPhone });
     if (!reply) return;
 
     const sent = await sock.sendMessage(jid, { text: reply });

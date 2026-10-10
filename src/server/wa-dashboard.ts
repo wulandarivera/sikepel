@@ -14,6 +14,21 @@ const sendSchema = z.object({
   to: z.string().regex(/^(?:\+?62|0|8)[0-9]{8,13}$/),
   text: z.string().trim().min(1).max(2000).refine((s) => !/[\p{Extended_Pictographic}\p{Regional_Indicator}\u200d\ufe0f\u20e3]/u.test(s)),
 }).strict();
+
+const autoReplyPostSchema = z.object({
+  keyword: z.string().trim().min(1).max(100).refine((s) => !/[\p{Extended_Pictographic}\p{Regional_Indicator}\u200d\ufe0f\u20e3]/u.test(s)),
+  match_type: z.enum(["EXACT", "CONTAINS", "REGEX"]),
+  reply_text: z.string().trim().min(1).max(2000).refine((s) => !/[\p{Extended_Pictographic}\p{Regional_Indicator}\u200d\ufe0f\u20e3]/u.test(s)),
+  is_active: z.boolean().default(true),
+}).strict();
+
+const autoReplyPutSchema = z.object({
+  keyword: z.string().trim().min(1).max(100).refine((s) => !/[\p{Extended_Pictographic}\p{Regional_Indicator}\u200d\ufe0f\u20e3]/u.test(s)).optional(),
+  match_type: z.enum(["EXACT", "CONTAINS", "REGEX"]).optional(),
+  reply_text: z.string().trim().min(1).max(2000).refine((s) => !/[\p{Extended_Pictographic}\p{Regional_Indicator}\u200d\ufe0f\u20e3]/u.test(s)).optional(),
+  is_active: z.boolean().optional(),
+}).strict();
+
 const statusSchema = z.object({
   connected: z.boolean(), hasQr: z.boolean(),
   qrDataUrl: z.string().max(200000).regex(/^data:image\/(?:png|svg\+xml);base64,[A-Za-z0-9+/=]+$/).nullable(),
@@ -24,7 +39,7 @@ const json = (data: unknown, status = 200) => Response.json(data, { status, head
 
 export function createWaDashboard(deps: Dependencies) {
   const limits = new Map<string, { count: number; expires: number }>();
-  return async (req: Request, action: string): Promise<Response> => {
+  return async (req: Request, action: string, id?: string): Promise<Response> => {
     try {
       const cookie = req.headers.get("cookie")?.split(";").map((s) => s.trim()).find((s) => s.startsWith("sikepel_session="));
       const user = await deps.session(cookie?.slice("sikepel_session=".length));
@@ -33,8 +48,15 @@ export function createWaDashboard(deps: Dependencies) {
       const cfg = deps.config();
       if (!cfg.village || !cfg.secret || !cfg.url) throw new AppError(503, "Gateway belum dikonfigurasi.");
       if (!user.village_id || user.village_id !== cfg.village) throw new AppError(403, "Gateway di luar lingkup kelurahan.");
-      const mutating = action === "send" || action === "logout";
-      if (!(action === "status" && req.method === "GET") && !(mutating && req.method === "POST")) throw new AppError(405, "Metode tidak diizinkan.");
+
+      const isAutoReplies = action === "auto-replies";
+      const mutating = (action === "send" || action === "logout") || (isAutoReplies && req.method !== "GET");
+
+      if (action === "status" && req.method !== "GET") throw new AppError(405, "Metode tidak diizinkan.");
+      if ((action === "send" || action === "logout") && req.method !== "POST") throw new AppError(405, "Metode tidak diizinkan.");
+      if (isAutoReplies && !["GET", "POST", "PUT", "DELETE"].includes(req.method)) throw new AppError(405, "Metode tidak diizinkan.");
+      if (!["status", "send", "logout", "auto-replies"].includes(action)) throw new AppError(404, "Aksi tidak ditemukan.");
+
       let body: unknown;
       if (mutating) {
         sameOrigin(req);
@@ -43,47 +65,123 @@ export function createWaDashboard(deps: Dependencies) {
         const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || new URL(req.url).host;
         const proto = req.headers.get("x-forwarded-proto") || new URL(req.url).protocol.slice(0, -1);
         if (origin !== new URL(req.url).origin && origin !== `${proto}://${host}`) throw new AppError(403, "Permintaan tidak diizinkan.");
-        if (!req.headers.get("content-type")?.startsWith("application/json")) throw new AppError(400, "JSON wajib.");
-        const reader = req.body?.getReader();
-        if (!reader) throw new AppError(400, "Body wajib.");
-        const chunks: Uint8Array[] = []; let size = 0;
-        while (true) {
-          const part = await reader.read(); if (part.done) break;
-          size += part.value.byteLength;
-          if (size > 8192) { await reader.cancel(); throw new AppError(413, "Ukuran permintaan terlalu besar."); }
-          chunks.push(part.value);
+
+        if (req.method !== "DELETE") {
+          if (!req.headers.get("content-type")?.startsWith("application/json")) throw new AppError(400, "JSON wajib.");
+          const reader = req.body?.getReader();
+          if (!reader) throw new AppError(400, "Body wajib.");
+          const chunks: Uint8Array[] = [];
+          let size = 0;
+          while (true) {
+            const part = await reader.read();
+            if (part.done) break;
+            size += part.value.byteLength;
+            if (size > 8192) {
+              await reader.cancel();
+              throw new AppError(413, "Ukuran permintaan terlalu besar.");
+            }
+            chunks.push(part.value);
+          }
+          try {
+            body = JSON.parse(Buffer.concat(chunks).toString());
+          } catch {
+            throw new AppError(400, "JSON tidak valid.");
+          }
+
+          if (action === "send") {
+            const parsed = sendSchema.safeParse(body);
+            if (!parsed.success) throw new AppError(400, "Parameter tidak valid.");
+            body = parsed.data;
+          } else if (action === "logout") {
+            const parsed = z.object({ confirm: z.literal(true) }).strict().safeParse(body);
+            if (!parsed.success) throw new AppError(400, "Parameter tidak valid.");
+            body = parsed.data;
+          } else if (isAutoReplies && req.method === "POST") {
+            const parsed = autoReplyPostSchema.safeParse(body);
+            if (!parsed.success) throw new AppError(400, "Parameter tidak valid.");
+            body = { ...parsed.data, created_by: user.name || user.username };
+          } else if (isAutoReplies && req.method === "PUT") {
+            const parsed = autoReplyPutSchema.safeParse(body);
+            if (!parsed.success) throw new AppError(400, "Parameter tidak valid.");
+            body = parsed.data;
+          }
         }
-        try { body = JSON.parse(Buffer.concat(chunks).toString()); } catch { throw new AppError(400, "JSON tidak valid."); }
-        const parsed = (action === "send" ? sendSchema : z.object({ confirm: z.literal(true) }).strict()).safeParse(body);
-        if (!parsed.success) throw new AppError(400, "Parameter tidak valid.");
-        body = parsed.data;
       }
+
       const now = Date.now();
       for (const [key, value] of limits) if (value.expires <= now) limits.delete(key);
       const key = `${user.id}:${mutating ? "write" : "read"}`;
       const limit = limits.get(key) || { count: 0, expires: now + 60000 };
       if (limit.count >= (mutating ? 10 : 120) || (!limits.has(key) && limits.size >= 10000)) throw new AppError(429, "Terlalu banyak permintaan.");
-      limit.count++; limits.set(key, limit);
-      await deps.audit(user, mutating ? `WA_${action.toUpperCase()}_REQUESTED` : "WA_STATUS_READ");
+      limit.count++;
+      limits.set(key, limit);
+
+      const auditAction = (() => {
+        if (action === "status") return "WA_STATUS_READ";
+        if (action === "send") return mutating ? "WA_SEND_REQUESTED" : "WA_SEND_READ";
+        if (action === "logout") return "WA_LOGOUT_REQUESTED";
+        if (isAutoReplies) {
+          if (req.method === "GET") return "WA_AUTO_REPLIES_READ";
+          if (req.method === "POST") return "WA_AUTO_REPLY_CREATE_REQUESTED";
+          if (req.method === "PUT") return "WA_AUTO_REPLY_UPDATE_REQUESTED";
+          if (req.method === "DELETE") return "WA_AUTO_REPLY_DELETE_REQUESTED";
+        }
+        return `WA_${action.toUpperCase()}_REQUESTED`;
+      })();
+
+      await deps.audit(user, auditAction);
+
+      let targetPath = `/${action}`;
+      if (isAutoReplies && id) {
+        targetPath = `/auto-replies/${encodeURIComponent(id)}`;
+      }
+
       let response: Response;
       try {
-        response = await deps.fetch(new URL(`/${action}`, cfg.url), {
-          method: req.method, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(10000),
-          headers: { Authorization: `Bearer ${cfg.secret}`, "X-WA-Village-ID": cfg.village, "Content-Type": "application/json" },
-          body: mutating ? JSON.stringify(body) : undefined,
+        response = await deps.fetch(new URL(targetPath, cfg.url), {
+          method: req.method,
+          cache: "no-store",
+          redirect: "error",
+          signal: AbortSignal.timeout(10000),
+          headers: {
+            Authorization: `Bearer ${cfg.secret}`,
+            "X-WA-Village-ID": cfg.village,
+            "Content-Type": "application/json",
+          },
+          body: (mutating && req.method !== "DELETE") ? JSON.stringify(body) : undefined,
         });
       } catch {
-        if (mutating) await deps.audit(user, `WA_${action.toUpperCase()}_FAILED`);
+        if (mutating) {
+          const failAction = auditAction.replace("_REQUESTED", "_FAILED");
+          await deps.audit(user, failAction);
+        }
         throw new AppError(503, "Gateway tidak tersedia.");
       }
+
       if (!response.ok) {
-        if (mutating) await deps.audit(user, `WA_${action.toUpperCase()}_FAILED`);
+        if (mutating) {
+          const failAction = auditAction.replace("_REQUESTED", "_FAILED");
+          await deps.audit(user, failAction);
+        }
+        if (response.status === 404) throw new AppError(404, "Data tidak ditemukan.");
+        if (response.status === 400) throw new AppError(400, "Permintaan tidak valid.");
         throw new AppError(503, "Gateway tidak tersedia.");
       }
+
       if (mutating) {
-        await deps.audit(user, `WA_${action.toUpperCase()}_COMPLETED`);
+        const completeAction = auditAction.replace("_REQUESTED", "_COMPLETED");
+        await deps.audit(user, completeAction);
+      }
+
+      if (isAutoReplies) {
+        const responseData = await response.json();
+        return json(responseData, response.status);
+      }
+
+      if (mutating) {
         return json({ ok: true });
       }
+
       const parsed = statusSchema.safeParse(await response.json());
       if (!parsed.success) throw new AppError(503, "Status gateway tidak valid.");
       return json(parsed.data);

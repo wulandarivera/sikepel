@@ -95,3 +95,79 @@ test("rate limit bounded by user, generic daemon failure", async () => {
   const res = await failing.handler(req(), "status");
   assert.equal(res.status, 503); assert.ok(!(await res.text()).includes("credential"));
 });
+
+test("auto-replies API: GET, POST, PUT, DELETE with validation, audit, and emoji rejection", async () => {
+  const { handler, calls } = setup({
+    fetch: async (url: any, init?: any) => {
+      calls.push(`${init?.method} ${new URL(String(url)).pathname}`);
+      if (init?.method === "GET") {
+        return Response.json({ ok: true, data: [{ id: "1", keyword: "syarat", match_type: "CONTAINS", reply_text: "Fotokopi KTP", is_active: true }] });
+      }
+      if (init?.method === "POST") {
+        const body = JSON.parse(String(init?.body));
+        return Response.json({ ok: true, data: { id: "new-id", ...body } }, { status: 201 });
+      }
+      if (init?.method === "PUT") {
+        const body = JSON.parse(String(init?.body));
+        return Response.json({ ok: true, data: { id: "1", ...body } });
+      }
+      if (init?.method === "DELETE") {
+        return Response.json({ ok: true });
+      }
+      return Response.json({ ok: false }, { status: 400 });
+    },
+  });
+
+  // 1. GET auto-replies
+  const getReq = new Request("http://localhost/api/wa/auto-replies", {
+    method: "GET",
+    headers: { cookie: "sikepel_session=valid" },
+  });
+  const getRes = await handler(getReq, "auto-replies");
+  assert.equal(getRes.status, 200);
+  const getData = await getRes.json();
+  assert.equal(getData.ok, true);
+  assert.equal(getData.data.length, 1);
+  assert.ok(calls.includes("WA_AUTO_REPLIES_READ"));
+
+  // 2. POST auto-reply with emoji -> REJECTED
+  const emojiReq = new Request("http://localhost/api/wa/auto-replies", {
+    method: "POST",
+    headers: { cookie: "sikepel_session=valid", origin: "http://localhost", "content-type": "application/json" },
+    body: JSON.stringify({ keyword: "lokasi", match_type: "EXACT", reply_text: "Kantor \u{1f600}" }),
+  });
+  const emojiRes = await handler(emojiReq, "auto-replies");
+  assert.equal(emojiRes.status, 400);
+
+  // 3. POST auto-reply valid -> SUCCESS
+  const postReq = new Request("http://localhost/api/wa/auto-replies", {
+    method: "POST",
+    headers: { cookie: "sikepel_session=valid", origin: "http://localhost", "content-type": "application/json" },
+    body: JSON.stringify({ keyword: "jam kerja", match_type: "CONTAINS", reply_text: "Senin-Jumat 08.00-15.00" }),
+  });
+  const postRes = await handler(postReq, "auto-replies");
+  assert.equal(postRes.status, 201);
+  assert.ok(calls.includes("WA_AUTO_REPLY_CREATE_REQUESTED"));
+  assert.ok(calls.includes("WA_AUTO_REPLY_CREATE_COMPLETED"));
+
+  // 4. PUT auto-reply valid -> SUCCESS
+  const putReq = new Request("http://localhost/api/wa/auto-replies/1", {
+    method: "PUT",
+    headers: { cookie: "sikepel_session=valid", origin: "http://localhost", "content-type": "application/json" },
+    body: JSON.stringify({ reply_text: "Senin-Jumat 08.00-16.00" }),
+  });
+  const putRes = await handler(putReq, "auto-replies", "1");
+  assert.equal(putRes.status, 200);
+  assert.ok(calls.includes("WA_AUTO_REPLY_UPDATE_REQUESTED"));
+  assert.ok(calls.includes("WA_AUTO_REPLY_UPDATE_COMPLETED"));
+
+  // 5. DELETE auto-reply -> SUCCESS
+  const delReq = new Request("http://localhost/api/wa/auto-replies/1", {
+    method: "DELETE",
+    headers: { cookie: "sikepel_session=valid", origin: "http://localhost" },
+  });
+  const delRes = await handler(delReq, "auto-replies", "1");
+  assert.equal(delRes.status, 200);
+  assert.ok(calls.includes("WA_AUTO_REPLY_DELETE_REQUESTED"));
+  assert.ok(calls.includes("WA_AUTO_REPLY_DELETE_COMPLETED"));
+});

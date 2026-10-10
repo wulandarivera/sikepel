@@ -21,11 +21,23 @@ for (const [name,role,scope] of [['operator','OPERATOR',village],['wrong','PIMPI
 }
 await pg.close();
 let connected=true, sends=0, logouts=0, unavailable=false;
+let replies=[{id:'rep-1', keyword:'syarat domisili', match_type:'CONTAINS', reply_text:'Fotokopi KTP dan KK', is_active:true}];
 const qr='data:image/svg+xml;base64,'+Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><rect width="240" height="240" fill="white"/><text x="30" y="120">TEST FIXTURE ONLY</text></svg>').toString('base64');
 const gateway=http.createServer(async(req,res)=>{
  if(unavailable){res.writeHead(503);res.end();return;}
  assert.equal(req.headers.authorization,'Bearer fixture-only');
  if(req.url==='/send'){sends++;} if(req.url==='/logout'){logouts++;connected=false;}
+ if(req.url==='/auto-replies' && req.method==='GET'){
+   res.setHeader('Content-Type','application/json');
+   res.end(JSON.stringify({ok:true, data:replies}));
+   return;
+ }
+ if(req.url==='/auto-replies' && req.method==='POST'){
+   res.setHeader('Content-Type','application/json');
+   res.writeHead(201);
+   res.end(JSON.stringify({ok:true, data:{id:'rep-2', keyword:'jam buka', match_type:'EXACT', reply_text:'Buka jam 8', is_active:true}}));
+   return;
+ }
  res.setHeader('Content-Type','application/json');
  res.end(JSON.stringify(req.url==='/status'?{connected,hasQr:!connected,qrDataUrl:connected?null:qr,profile:{phone:connected?'628000000000':null,name:connected?'Fixture Operator':null,startedAt:connected?'2026-10-09T00:00:00.000Z':null},logs:[{id:'1',at:'2026-10-09T00:00:00.000Z',direction:'in',recipient:'[redacted]',summary:'Fixture activity',status:'received'}]}:{ok:true}));
 });
@@ -43,6 +55,18 @@ try {
  await context.addCookies([{name:'sikepel_session',value:'fixture-operator',url:base}]);await page.goto(base+'/wa');await page.getByText('Terhubung',{exact:true}).waitFor();await page.getByText('Fixture activity').waitFor();
  await page.screenshot({path:path.join(artifacts,'desktop.png'),fullPage:true});
  await page.getByLabel('Nomor tujuan').fill('081234567890');await page.getByLabel('Pesan uji').fill('Uji fixture');await page.getByRole('button',{name:'Kirim pesan uji',exact:true}).click();await page.getByText('Pesan uji berhasil dikirim.').waitFor();assert.equal(sends,1);console.log('PASS profile/logs/test-send fixture');
+ await page.getByRole('button', { name: 'Template Respon' }).click();
+ await page.getByText('Manajemen Template Balasan Otomatis').waitFor();
+ await page.getByText('syarat domisili').waitFor();
+ await page.getByRole('button', { name: 'Tambah Template Baru' }).click();
+ await page.getByRole('heading', { name: 'Tambah Template Balasan Baru' }).waitFor();
+ await page.locator('#wa-input-keyword').fill('lokasi kantor');
+ await page.locator('#wa-textarea-reply').fill('Halo {nama}, kantor berlokasi di Cibodas.');
+ await page.getByText('Halo Budi Santoso, kantor berlokasi di Cibodas.').waitFor();
+ await page.screenshot({ path: path.join(artifacts, 'template-respon-preview.png') });
+ await page.getByRole('button', { name: 'Batal', exact: true }).click();
+ await page.getByRole('button', { name: 'Koneksi & Status' }).click();
+ console.log('PASS template respon tab/modal/live preview/zero emoji');
  assert.equal((await context.request.post(base+'/api/wa/logout',{headers:{Origin:'https://evil.test'},data:{confirm:true}})).status(),403);assert.equal(logouts,0);console.log('PASS CSRF');
  await page.getByRole('button',{name:'Putus koneksi / Ganti nomor'}).click();await page.getByRole('button',{name:'Batal',exact:true}).click();assert.equal(logouts,0);
  await page.getByRole('button',{name:'Putus koneksi / Ganti nomor'}).click();await page.getByRole('button',{name:'Ya, putus sesi'}).click();await page.getByText('Menunggu Scan QR',{exact:true}).waitFor();await page.getByAltText('QR penghubung WhatsApp privat').waitFor();assert.equal(logouts,1);assert.equal(await page.getByRole('button',{name:'Kirim pesan uji',exact:true}).isDisabled(),true);console.log('PASS logout cancellation/new QR/send disabled');

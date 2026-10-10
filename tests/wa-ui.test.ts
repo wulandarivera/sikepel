@@ -9,7 +9,7 @@ test("WA host routes only dashboard, login, exact APIs and required assets", () 
   assert.ok(request("/").headers.get("x-middleware-rewrite")?.endsWith("/wa"));
   assert.ok(request("/login").headers.get("x-middleware-rewrite")?.endsWith("/wa/login"));
   assert.ok(request("/app/dashboard").headers.get("location")?.endsWith("/wa"));
-  for (const path of ["/wa", "/wa/login", "/api/login", "/api/wa/status", "/api/wa/send", "/api/wa/logout", "/assets/icon.webp"]) assert.notEqual(request(path).status, 404);
+  for (const path of ["/wa", "/wa/login", "/api/login", "/api/wa/status", "/api/wa/send", "/api/wa/logout", "/api/wa/auto-replies", "/api/wa/auto-replies/123", "/assets/icon.webp"]) assert.notEqual(request(path).status, 404);
   for (const path of ["/setup", "/api/users", "/api/wa/unknown", "/wa/other", "/assets/private", "/mandiri", "/_next/image?url=%2Fapi%2Fusers&w=64&q=75"]) assert.equal(request(path).status, 404);
 });
 test("WA access requires permitted role and exact configured village", () => {
