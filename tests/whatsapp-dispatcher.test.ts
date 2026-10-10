@@ -63,11 +63,15 @@ test("WhatsApp Dispatcher: format notifikasi bebas emoji dan mematuhi penegasan 
     assert.ok(msg.includes(p.ticket), `Harus memuat nomor tiket ${p.ticket}`);
     assert.ok(msg.includes(p.type_name), `Harus memuat jenis surat ${p.type_name}`);
 
-    // Penegasan surat fisik wajib diambil langsung tanpa file PDF
+    // Penegasan surat fisik diambil langsung di loket pelayanan kelurahan
     if (["APPROVED", "COMPLETED", "SIAP_DIAMBIL"].includes(p.status)) {
       assert.ok(
-        msg.includes("Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF)"),
-        `Status ${p.status} wajib memuat kalimat penegasan larangan pengiriman file PDF`,
+        msg.includes("Surat fisik diambil langsung di loket pelayanan kantor kelurahan."),
+        `Status ${p.status} wajib memuat penegasan surat fisik diambil di loket`,
+      );
+      assert.ok(
+        !msg.includes("JANGAN PERNAH"),
+        `Status ${p.status} tidak boleh memuat frasa internal JANGAN PERNAH`,
       );
     }
   }

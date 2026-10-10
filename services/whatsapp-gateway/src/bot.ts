@@ -74,7 +74,7 @@ export async function processMessageText(
       "2. Unggah foto atau scan dokumen persyaratan yang diminta.",
       "3. Simpan nomor tiket yang diterbitkan setelah pengajuan.",
       "",
-      "Pemberitahuan Wajib: Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF).",
+      "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan kantor kelurahan.",
     ].join("\n");
   }
 

@@ -34,8 +34,12 @@ async function runTests() {
     "Menu harus memuat contoh format tiket",
   );
   assert.ok(
-    menuText.includes("Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF)"),
-    "Menu wajib memuat penegasan surat fisik diambil langsung tanpa PDF",
+    menuText.includes("Surat fisik diambil langsung di loket pelayanan kantor kelurahan."),
+    "Menu wajib memuat penegasan surat fisik diambil di loket pelayanan",
+  );
+  assert.ok(
+    !menuText.includes("JANGAN PERNAH"),
+    "Menu tidak boleh memuat peringatan internal JANGAN PERNAH",
   );
 
   // 2. Uji respon sapaan via processMessageText
@@ -54,7 +58,8 @@ async function runTests() {
     assert.ok(res !== null, `Harus merespon pertanyaan ${q}`);
     assertNoEmoji(res, `processMessageText ajukan ${q}`);
     assert.ok(res.includes("https://mandiri.sikepel.biz.id/ajukan"), "Harus menyertakan link ajukan");
-    assert.ok(res.includes("Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF)"), "Wajib memuat klausul fisik tanpa PDF");
+    assert.ok(res.includes("Surat fisik diambil langsung di loket pelayanan kantor kelurahan."), "Wajib memuat klausul fisik di loket");
+    assert.ok(!res.includes("JANGAN PERNAH"), "Tidak boleh memuat frasa JANGAN PERNAH");
   }
 
   // 4. Uji format status permohonan untuk seluruh kemungkinan status
@@ -67,7 +72,7 @@ async function runTests() {
     {
       status: "NEEDS_REVISION",
       expectedStatus: "PERLU_PERBAIKAN",
-      note: "Foto KTP buram, silakan unggah ulang",
+      note: "Mohon lampirkan ulang foto KTP yang lebih jelas",
     },
     {
       status: "APPROVED",
@@ -103,8 +108,12 @@ async function runTests() {
 
     if (item.status === "APPROVED" || item.status === "COMPLETED") {
       assert.ok(
-        reply.includes("Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF)"),
-        `Status ${item.status} wajib menegaskan surat fisik diambil langsung tanpa PDF`,
+        reply.includes("Surat fisik diambil langsung di loket pelayanan kantor kelurahan."),
+        `Status ${item.status} wajib menegaskan surat fisik diambil di loket`,
+      );
+      assert.ok(
+        !reply.includes("JANGAN PERNAH"),
+        `Status ${item.status} tidak boleh memuat frasa internal JANGAN PERNAH`,
       );
     }
   }

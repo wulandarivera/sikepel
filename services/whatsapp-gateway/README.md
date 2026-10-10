@@ -19,7 +19,7 @@ Layanan WhatsApp Gateway dan Hotline Warga mandiri lokal berbasis Node.js dan `@
 
 4. **Dispatcher Notifikasi Status**:
    - Menerima dispatch internal dari backend SIKEPEL saat operator menyetujui, meminta perbaikan, menolak, atau menandai surat siap diambil.
-   - Klausul wajib: Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF).
+   - Pemberitahuan: Surat fisik diambil langsung di loket pelayanan kantor kelurahan.
 
 5. **Kebijakan Ketat**:
    - ZERO EMOJI di seluruh pesan teks notifikasi, sapaan bot, log, dan komentar kode.

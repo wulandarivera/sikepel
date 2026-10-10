@@ -27,8 +27,7 @@ export function formatBotMenu(): string {
     "   Kantor Kelurahan Cibodas melayani loket pada hari kerja:",
     "   Senin - Jumat: Pukul 08.00 - 15.00 WIB",
     "",
-    "Pemberitahuan Wajib:",
-    "Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF).",
+    "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan kantor kelurahan.",
   ].join("\n");
 }
 
@@ -58,7 +57,7 @@ export function formatTicketStatusReply(data: TicketRecord): string {
       statusLabel = "DISETUJUI (DISETUJUI)";
       keterangan =
         "Permohonan telah disetujui oleh operator. Draf surat dinas sedang diproses untuk penandatanganan.\n\n" +
-        "Pemberitahuan Wajib: Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF). Anda akan menerima pemberitahuan ketika dokumen siap diambil.";
+        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan kantor kelurahan. Anda akan menerima pemberitahuan ketika dokumen siap diambil.";
       break;
 
     case "COMPLETED":
@@ -67,7 +66,7 @@ export function formatTicketStatusReply(data: TicketRecord): string {
       keterangan =
         "Surat fisik Anda sudah selesai dicetak dan siap diambil di loket pelayanan Kantor Kelurahan Cibodas.\n" +
         "Harap membawa KTP elektronik asli dan dokumen persyaratan asli untuk verifikasi langsung di loket.\n\n" +
-        "Pemberitahuan Wajib: Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF).";
+        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan kantor kelurahan.";
       break;
 
     case "REJECTED":
@@ -134,7 +133,7 @@ export function formatNotificationMessage(payload: StatusNotificationPayload): s
         "",
         "Draf surat dinas sedang diproses untuk penandatanganan resmi.",
         "",
-        "Pemberitahuan Wajib: Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF). Anda akan diberitahu kembali setelah surat siap diambil.",
+        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan kantor kelurahan. Anda akan diberitahu kembali setelah surat siap diambil.",
       ].join("\n");
 
     case "COMPLETED":
@@ -148,7 +147,7 @@ export function formatNotificationMessage(payload: StatusNotificationPayload): s
         "1. Membawa KTP elektronik asli pemohon.",
         "2. Membawa dokumen persyaratan asli untuk verifikasi akhir di loket.",
         "",
-        "Pemberitahuan Wajib: Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF).",
+        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan kantor kelurahan.",
       ].join("\n");
 
     case "NEEDS_REVISION":
@@ -182,7 +181,7 @@ export function formatNotificationMessage(payload: StatusNotificationPayload): s
         "",
         `${nama}Status permohonan surat ${jenis} Anda dengan nomor tiket ${code} telah diperbarui menjadi: ${payload.status}.`,
         "",
-        "Pemberitahuan Wajib: Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF).",
+        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan kantor kelurahan.",
       ].join("\n");
   }
 }

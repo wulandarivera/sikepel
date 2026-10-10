@@ -23,7 +23,7 @@ export function formatWhatsAppMessage(payload: PermohonanNotificationPayload): s
         "",
         "Draf surat dinas sedang diproses untuk penandatanganan resmi.",
         "",
-        "Pemberitahuan Wajib: Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF). Anda akan diberitahu kembali setelah surat siap diambil.",
+        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan kantor kelurahan. Anda akan diberitahu kembali setelah surat siap diambil.",
       ].join("\n");
 
     case "COMPLETED":
@@ -37,7 +37,7 @@ export function formatWhatsAppMessage(payload: PermohonanNotificationPayload): s
         "1. Membawa KTP elektronik asli pemohon.",
         "2. Membawa berkas persyaratan asli untuk verifikasi akhir di loket.",
         "",
-        "Pemberitahuan Wajib: Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF).",
+        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan kantor kelurahan.",
       ].join("\n");
 
     case "NEEDS_REVISION":
@@ -71,7 +71,7 @@ export function formatWhatsAppMessage(payload: PermohonanNotificationPayload): s
         "",
         `${nama}Status permohonan surat ${jenis} Anda dengan nomor tiket ${code} telah diperbarui: ${payload.status}.`,
         "",
-        "Pemberitahuan Wajib: Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF).",
+        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan kantor kelurahan.",
       ].join("\n");
   }
 }

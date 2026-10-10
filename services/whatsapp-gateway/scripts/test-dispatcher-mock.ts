@@ -92,8 +92,12 @@ async function runTests() {
 
     if (p.status === "APPROVED" || p.status === "COMPLETED" || p.status === "SIAP_DIAMBIL") {
       assert.ok(
-        msg.includes("Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF)"),
-        `Pemberitahuan status ${p.status} wajib menegaskan surat fisik diambil langsung tanpa file PDF`,
+        msg.includes("Surat fisik diambil langsung di loket pelayanan kantor kelurahan."),
+        `Pemberitahuan status ${p.status} wajib menegaskan surat fisik diambil di loket`,
+      );
+      assert.ok(
+        !msg.includes("JANGAN PERNAH"),
+        `Pemberitahuan status ${p.status} tidak boleh memuat frasa internal JANGAN PERNAH`,
       );
     }
   }
@@ -150,7 +154,10 @@ async function runTests() {
     assert.equal(sentMessagePayload.jid, "6281234567890@s.whatsapp.net");
     assert.ok(sentMessagePayload.content.text.includes("TIK-202610-88776655"));
     assert.ok(
-      sentMessagePayload.content.text.includes("Surat fisik diambil langsung di kantor kelurahan (JANGAN PERNAH mengirimkan file PDF)"),
+      sentMessagePayload.content.text.includes("Surat fisik diambil langsung di loket pelayanan kantor kelurahan."),
+    );
+    assert.ok(
+      !sentMessagePayload.content.text.includes("JANGAN PERNAH"),
     );
 
     // Check POST /send
