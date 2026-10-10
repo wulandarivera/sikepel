@@ -18,19 +18,19 @@
   },
   {
     "key": "nomor_handphone",
-    "label": "Nomor handphone / WA (opsional)",
+    "label": "Nomor handphone / WA",
     "type": "text",
     "required": false
   },
   {
     "key": "email",
-    "label": "Alamat email (opsional)",
+    "label": "Alamat email",
     "type": "text",
     "required": false
   },
   {
     "key": "nama_petugas",
-    "label": "Nama petugas (opsional)",
+    "label": "Nama petugas",
     "type": "text",
     "required": false
   },
@@ -132,7 +132,7 @@
   },
   {
     "key": "catatan",
-    "label": "Catatan petugas (tidak tercetak)",
+    "label": "Catatan Untuk Petugas (tidak tercetak)",
     "type": "textarea",
     "required": false
   }

@@ -24,6 +24,7 @@ export default function TrackPage(){
           <small>Format: TIK-YYYYMM-XXXX</small>
           <input
             required
+            aria-label="Nomor tiket"
             autoComplete="off"
             spellCheck={false}
             pattern="TIK-[0-9]{6}-[A-F0-9]{8}"
@@ -37,6 +38,7 @@ export default function TrackPage(){
           <small>64 karakter heksadesimal dari bukti pengajuan</small>
           <input
             required
+            aria-label="Kode akses rahasia"
             type="password"
             autoComplete="off"
             spellCheck={false}
@@ -49,7 +51,7 @@ export default function TrackPage(){
           />
         </label>
         <div style={{ marginTop: '20px' }}>
-          <button disabled={busy}>{busy ? 'Memeriksa status…' : 'Lacak Status Tiket'}</button>
+          <button aria-label="Lacak tiket" disabled={busy}>{busy ? 'Memeriksa status…' : 'Lacak tiket'}</button>
         </div>
         <p className="notice" style={{ marginTop: '20px', fontSize: '0.85rem' }}>
           Jaga kerahasiaan kode akses. Tiket atau kode akses yang salah maupun kedaluwarsa akan ditampilkan sebagai permohonan tidak ditemukan demi perlindungan privasi.

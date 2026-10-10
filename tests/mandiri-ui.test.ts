@@ -24,3 +24,14 @@ test('attachment validation matches server limits', () => {
   assert.match(attachmentError([{size:1,type:'text/html'}]),/PDF/);
   assert.match(attachmentError([{size:0,type:'image/png'}]),/kosong/);
 });
+test('revisi 7 poin: templates omit jabatan_detail, use Catatan Untuk Petugas and remove opsional from labels', async () => {
+  const fs = await import('node:fs/promises');
+  const umumFields = JSON.parse(await fs.readFile('templates/umum.fields.json', 'utf8'));
+  assert.equal(umumFields.some((f: any) => f.key === 'jabatan_detail'), false, 'jabatan_detail must be removed');
+  const catatanField = umumFields.find((f: any) => f.key === 'catatan');
+  assert.ok(catatanField, 'catatan field exists');
+  assert.match(catatanField.label, /Catatan Untuk Petugas/, 'Catatan petugas label must be Catatan Untuk Petugas');
+  for (const f of umumFields) {
+    assert.doesNotMatch(f.label, /\(opsional\)/i, `Label ${f.label} must not contain (opsional)`);
+  }
+});

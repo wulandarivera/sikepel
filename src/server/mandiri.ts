@@ -98,7 +98,11 @@ export async function mandiriResponse(req:Request,route:string,db:DB):Promise<Re
       const ticket='TIK-'+new Date().toISOString().slice(0,7).replace('-','')+'-'+randomBytes(4).toString('hex').toUpperCase();
       const row=await one(db,`INSERT INTO online_requests(id,ticket_code,type_id,village_id,form_data,contact_phone,attachments,tracking_token_hash,tracking_expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,now()+interval '30 days') RETURNING created_at,tracking_expires_at,status`,[randomUUID(),ticket,input.type_id,village,JSON.stringify({resident:input.resident,fields:input.form_data}),input.contact_phone,JSON.stringify(metadata),hashToken(token)]);
       saved.length=0;
-      return response({ticket,status:row.status,created_at:row.created_at,tracking_token:token,tracking_expires_at:row.tracking_expires_at},201);
+      let cleanPhone = input.contact_phone.replace(/[^0-9]/g, '');
+      if (cleanPhone.startsWith('0')) cleanPhone = '62' + cleanPhone.slice(1);
+      const waMsg = `Halo ${input.resident.name}, permohonan surat Anda di Kelurahan Cibodas telah berhasil diajukan dengan nomor tiket: ${ticket}. Kode akses: ${token}. Petunjuk: Simpan nomor tiket dan kode akses ini untuk melacak permohonan Anda. Terima kasih.`;
+      const wa_url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMsg)}` : '';
+      return response({ticket,status:row.status,created_at:row.created_at,tracking_token:token,tracking_expires_at:row.tracking_expires_at,wa_url},201);
     }
     if(route.startsWith('track/') && req.method==='GET') {
       const token=req.headers.get('authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];

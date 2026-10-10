@@ -110,9 +110,15 @@ execFileSync(
 );
 
 // 3. Start Next.js server on port 3105
+const nextBin = path.resolve(
+  process.cwd(),
+  (await fs.stat("node_modules/next/dist/bin/next")
+    .then(() => "node_modules/next/dist/bin/next")
+    .catch(() => "../../node_modules/next/dist/bin/next")),
+);
 const server = spawn(
   process.execPath,
-  ["node_modules/.bin/next", "start", "-p", String(port)],
+  [nextBin, "start", "-p", String(port)],
   {
     env,
     stdio: "inherit",

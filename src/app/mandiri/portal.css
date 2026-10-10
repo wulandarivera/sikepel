@@ -67,11 +67,12 @@
   z-index: 50;
   backdrop-filter: blur(8px);
   background-color: rgba(255, 255, 255, 0.95);
-  padding: 14px max(20px, calc((100% - 960px) / 2));
+  padding: 12px max(16px, calc((100% - 960px) / 2));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .portal header > a {

@@ -209,7 +209,7 @@ async function main() {
             ...baseFields,
             {
               key: "catatan",
-              label: "Catatan petugas (tidak tercetak)",
+              label: "Catatan Untuk Petugas (tidak tercetak)",
               type: "textarea",
               required: false,
             },

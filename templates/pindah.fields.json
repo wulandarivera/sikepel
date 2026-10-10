@@ -112,19 +112,19 @@
   },
   {
     "key": "nomor_handphone",
-    "label": "Nomor HP pemohon (opsional)",
+    "label": "Nomor HP pemohon",
     "type": "text",
     "required": false
   },
   {
     "key": "email",
-    "label": "Email pemohon (opsional)",
+    "label": "Email pemohon",
     "type": "text",
     "required": false
   },
   {
     "key": "catatan",
-    "label": "Catatan petugas (tidak tercetak)",
+    "label": "Catatan Untuk Petugas (tidak tercetak)",
     "type": "textarea",
     "required": false
   }
