@@ -7,6 +7,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -136,6 +137,30 @@ export function Workspace() {
     { data, error, reload } = useData("bootstrap"),
     [menu, setMenu] = useState(false),
     [message, setMessage] = useState("");
+  const [mobile, setMobile] = useState(false);
+  const navigation = useRef<HTMLElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 760px)");
+    const update = () => setMobile(query.matches);
+    update(); query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  useEffect(() => {
+    if (!mobile || !menu) return;
+    const items = () => Array.from(navigation.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), select") || []);
+    items()[0]?.focus();
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); setMenu(false); }
+      if (event.key === "Tab") {
+        const list = items(), first = list[0], last = list[list.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("keydown", key); menuButton.current?.focus(); };
+  }, [mobile, menu]);
   const notify = useCallback((s: string) => setMessage(s), []);
   useEffect(() => {
     if (message) {
@@ -203,7 +228,7 @@ export function Workspace() {
           className={`mobile-shade ${menu ? "open" : ""}`}
           onClick={() => setMenu(false)}
         />
-        <aside className={`sidebar ${menu ? "open" : ""}`}>
+        <aside id="workspace-navigation" ref={navigation} inert={mobile && !menu} aria-hidden={mobile && !menu} role={mobile && menu ? "dialog" : undefined} aria-modal={mobile && menu ? true : undefined} aria-label="Navigasi layanan" className={`sidebar ${menu ? "open" : ""}`}>
           <button
             className="mobile-close"
             aria-label="Tutup navigasi"
@@ -281,6 +306,9 @@ export function Workspace() {
           <header className="topbar">
             <button
               className="topbar-menu"
+              ref={menuButton}
+              aria-expanded={menu}
+              aria-controls="workspace-navigation"
               onClick={() => setMenu(!menu)}
               aria-label="Buka navigasi"
             >
