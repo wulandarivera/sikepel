@@ -1,4 +1,5 @@
 "use client";
+import { environmentLabel } from "@/lib/environment-label";
 import {
   createContext,
   useContext,
@@ -382,9 +383,7 @@ export function Workspace() {
               </span>
               <span className="row">
                 <ShieldCheck size={12} />{" "}
-                {data.local
-                  ? "Lingkungan lokal · Data contoh"
-                  : "Pelayanan terintegrasi"}
+                {environmentLabel(data)}
               </span>
             </footer>
           </main>
