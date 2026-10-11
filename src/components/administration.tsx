@@ -902,10 +902,10 @@ export function Templates() {
             Template baru tidak mengubah surat yang sudah terbit. Versi lama
             tetap disimpan untuk menjaga arsip.
           </Alert>
-          <Alert kind="warning">
-            Template awal merupakan contoh pengujian. Ganti dengan format yang
+          {data?.items && data.items.some((t: Row) => t.active && t.file_name?.endsWith("-contoh-v1.docx")) && <Alert kind="warning">
+            Template contoh aktif masih tersedia. Periksa dan ganti dengan format yang
             disetujui instansi sebelum penggunaan operasional.
-          </Alert>
+          </Alert>}
         </div>
       </div>
       <Modal

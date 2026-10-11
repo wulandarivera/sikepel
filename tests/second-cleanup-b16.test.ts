@@ -1,0 +1,1 @@
+import test from "node:test";import assert from "node:assert/strict";import {readFileSync} from "node:fs";test("seed warning is conditional on active seed template",()=>{const s=readFileSync('src/components/administration.tsx','utf8');assert.ok(s.includes('data.items.some'));assert.ok(s.includes('t.active'));assert.ok(s.includes('-contoh-v1.docx'));});
