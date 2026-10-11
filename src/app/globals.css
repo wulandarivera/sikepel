@@ -810,6 +810,15 @@ tbody tr:hover {
   margin: 16px 0 7px;
   display: block;
 }
+.login-input:focus-within {
+  border-color: #17365d;
+  box-shadow: 0 0 0 3px rgba(23, 54, 93, 0.3);
+}
+.login-input input:focus-visible,
+.login-input button:focus-visible {
+  outline: 2px solid #17365d;
+  outline-offset: 2px;
+}
 .login-input {
   display: flex;
   align-items: center;
