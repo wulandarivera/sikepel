@@ -1,22 +1,12 @@
 import Link from 'next/link';
-import Image from 'next/image';
+
 
 export default function PortalHome() {
   return (
     <>
       <div className="portal-hero">
-        <div className="portal-hero-logo-box">
-          <Image
-            src="/assets/logo.webp"
-            alt="SIKEPEL Kelurahan Cibodas"
-            width={240}
-            height={160}
-            className="portal-hero-logo"
-            priority
-          />
-        </div>
-        <div className="portal-hero-tag">Layanan Mandiri Warga</div>
-        <h1>Pelayanan Surat Cepat &amp; Transparan</h1>
+        <div className="portal-hero-tag">Untuk warga</div>
+        <h1>Layanan surat mandiri</h1>
         <div className="gold-line" />
         <p className="portal-lead">
           Ajukan permohonan surat dari rumah, unggah persyaratan digital, pantau status verifikasi, dan ambil surat resmi di kantor kelurahan.

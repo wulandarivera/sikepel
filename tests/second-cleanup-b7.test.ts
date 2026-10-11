@@ -1,0 +1,2 @@
+import test from "node:test"; import assert from "node:assert/strict"; import {readFileSync} from "node:fs";
+test("mandiri hero omits duplicate logo and keeps primary task heading",()=>{const s=readFileSync("src/app/mandiri/page.tsx","utf8");assert.ok(!s.includes('portal-hero-logo-box'));assert.ok(s.includes('<h1>Layanan surat mandiri</h1>'));});
