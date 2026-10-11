@@ -510,14 +510,14 @@ export function TemplateEditorModal({
         {/* LIBREOFFICE TITLEBAR */}
         <div className="libreoffice-titlebar">
           <div className="lo-titlebar-left">
-            <div className="lo-app-icon" title="LibreOffice Writer">
+            <div className="lo-app-icon" title="Editor Template SIKEPEL">
               <FileText size={18} />
             </div>
             <span className="lo-doc-title">
               {data
                 ? `${data.type.slug}-template-v${data.template.version}.docx`
                 : "Memuat Dokumen..."}{" "}
-              — LibreOffice Writer
+              — Editor Template SIKEPEL
             </span>
           </div>
 
@@ -1065,7 +1065,7 @@ export function TemplateEditorModal({
           {loading ? (
             <div className="editor-loading-center">
               <Loader2 size={36} className="spin" style={{ color: "#18a058" }} />
-              <p>Membuka dokumen di LibreOffice Web Engine...</p>
+              <p>Memuat editor HTML SIKEPEL...</p>
             </div>
           ) : (
             <>
