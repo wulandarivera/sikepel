@@ -1099,7 +1099,9 @@ export function TemplateEditorModal({
               {/* PREVIEW MODE CANVAS */}
               {mode === "preview" && (
                 <div className="a4-container">
-                  <div className="a4-sheet preview-sheet">
+                  <div className="a4-sheet preview-sheet" style={{position:"relative"}}>
+                    <p role="status" style={{fontWeight:700,color:"#8c5a00"}}>Data contoh fiktif, bukan data warga.</p>
+                    <div aria-hidden="true" style={{position:"absolute",inset:0,display:"grid",placeItems:"center",pointerEvents:"none",zIndex:2,color:"rgba(150,70,0,.25)",fontSize:28,fontWeight:800,transform:"rotate(-25deg)"}}>CONTOH — BUKAN SURAT RESMI</div>
                     {showLogo && (
                       <img
                         src={data?.logo_url || "/assets/kop-logo.png"}
