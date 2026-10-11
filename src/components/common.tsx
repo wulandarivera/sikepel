@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, Children, isValidElement, cloneElement } from "react";
 import {
   Search,
   ChevronLeft,
@@ -299,17 +299,29 @@ export function Field({
   children: React.ReactNode;
   hint?: string;
 }) {
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!error || !root.current) return;
+    const first = root.current.closest("form")?.querySelector(".field-error input, .field-error select, .field-error textarea");
+    if (first && root.current.contains(first)) (first as HTMLElement).focus();
+  }, [error]);
+  const description = error ? `${name}-error` : hint ? `${name}-hint` : undefined;
+  const controls = Children.map(children, child => {
+    if (!isValidElement(child) || !["input", "select", "textarea"].includes(child.type as string)) return child;
+    const props = child.props as Record<string, any>;
+    return cloneElement(child as React.ReactElement<any>, {id: props.id || name, "aria-invalid": error ? true : undefined, "aria-describedby": [props["aria-describedby"], description].filter(Boolean).join(" ") || undefined});
+  });
   return (
-    <div className={`field ${error ? "field-error" : ""}`}>
+    <div ref={root} className={`field ${error ? "field-error" : ""}`}>
       <label htmlFor={name}>
         {label}
         {required && <span className="required"> *</span>}
       </label>
-      {children}
+      {controls}
       {error ? (
-        <small className="error-text">{error}</small>
+        <small id={`${name}-error`} className="error-text">{error}</small>
       ) : (
-        hint && <small>{hint}</small>
+        hint && <small id={`${name}-hint`}>{hint}</small>
       )}
     </div>
   );
