@@ -317,7 +317,7 @@ export function Workspace() {
             <div className="topbar-title">
               <b>
                 Pemerintah{" "}
-                {village?.city || data.settings?.city || "Kota Sejahtera"}
+                {village?.city || data.settings?.city || "Daerah"}
               </b>
               <small>SIKEPEL · Sistem Informasi Pelayanan Kelurahan</small>
             </div>

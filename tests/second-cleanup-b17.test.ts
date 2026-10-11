@@ -1,0 +1,1 @@
+import test from "node:test";import assert from "node:assert/strict";import {readFileSync} from "node:fs";test("workspace city fallback is neutral",()=>{const s=readFileSync('src/components/workspace.tsx','utf8');assert.ok(!s.includes('|| "Kota Sejahtera"'));});
