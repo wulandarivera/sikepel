@@ -349,7 +349,7 @@ function LetterForm({
     <>
       <PageHeader
         title="Buat Surat"
-        description={initial?.draft_ticket ? `${type.name} | Tiket ${initial.draft_ticket} | Berlaku sampai ${new Date(initial.draft_expires_at).toLocaleString("id-ID")}` : type.name}
+        description={initial?.draft_ticket ? `${type.name} | Tiket ${initial.draft_ticket} | Berlaku sampai ${new Date(initial.draft_expires_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"}` : type.name}
         eyebrow="Pelayanan Surat"
       />
       <Steps step={2} />
@@ -591,7 +591,7 @@ function Preview({ id }: { id: string }) {
     <>
       <PageHeader
         title="Preview Surat"
-        description={`Tiket ${data.draft_ticket} | ${data.draft_type_name} | Berlaku sampai ${new Date(data.draft_expires_at).toLocaleString("id-ID")}. Nomor resmi belum dialokasikan.`}
+        description={`Tiket ${data.draft_ticket} | ${data.draft_type_name} | Berlaku sampai ${new Date(data.draft_expires_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"}. Nomor resmi belum dialokasikan.`}
         action={
           <Button asChild variant="outline">
             <Link href={"/app/pelayanan/draft/" + id}>
@@ -994,7 +994,7 @@ function ArchiveDetail({ id, success }: { id: string; success: boolean }) {
             ? "Surat Berhasil Diterbitkan"
             : "Detail Arsip Surat"
         }
-        description={l.number || `Tiket ${l.draft_ticket} | ${l.draft_type_name} | Berlaku sampai ${new Date(l.draft_expires_at).toLocaleString("id-ID")}. Nomor resmi belum dialokasikan.`}
+        description={l.number || `Tiket ${l.draft_ticket} | ${l.draft_type_name} | Berlaku sampai ${new Date(l.draft_expires_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"}. Nomor resmi belum dialokasikan.`}
         action={
           l.has_pdf ? (
             actions

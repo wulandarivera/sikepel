@@ -116,7 +116,7 @@ export default function TrackPage() {
             Jenis Dokumen: <strong>{result.type_name}</strong>
           </p>
           <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-            Diajukan: {new Date(result.created_at).toLocaleString('id-ID')}
+            Diajukan: {new Date(result.created_at).toLocaleString('id-ID', { timeZone: "Asia/Jakarta" }) + " WIB"}
           </p>
 
           <ol className="timeline" style={{ margin: '24px 0' }}>

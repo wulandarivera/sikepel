@@ -90,7 +90,7 @@ export function LetterTable({ items }: { items: Row[] }) {
                   })}
                 </small>
               </td>
-              <td className="mono">{l.number || l.draft_ticket || "Belum bernomor"}{["DRAFT", "PREVIEW"].includes(l.status) && l.draft_expires_at && <small>Berlaku sampai {new Date(l.draft_expires_at).toLocaleString("id-ID")}</small>}</td>
+              <td className="mono">{l.number || l.draft_ticket || "Belum bernomor"}{["DRAFT", "PREVIEW"].includes(l.status) && l.draft_expires_at && <small>Berlaku sampai {new Date(l.draft_expires_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"}</small>}</td>
               <td>{l.type_name.replace("Surat Keterangan ", "Keterangan ")}</td>
               <td>
                 <strong>{l.resident_name}</strong>
@@ -150,7 +150,7 @@ export function Dashboard() {
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     return {
       key,
-      label: d.toLocaleDateString("id-ID", { month: "short" }),
+      label: d.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", month: "short" }),
       count: data.months.find((m: Row) => m.month === key)?.count || 0,
     };
   });
@@ -161,7 +161,7 @@ export function Dashboard() {
       if (period === "day") {
         const isToday = selectedDate === getTodayStr();
         const d = new Date(selectedDate + "T12:00:00");
-        const formatted = d.toLocaleDateString("id-ID", {
+        const formatted = d.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta",
           weekday: "long",
           day: "numeric",
           month: "long",
@@ -172,7 +172,7 @@ export function Dashboard() {
       if (period === "month") {
         const isThisMonth = selectedMonth === getThisMonthStr();
         const d = new Date(selectedMonth + "-01T12:00:00");
-        const formatted = d.toLocaleDateString("id-ID", {
+        const formatted = d.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta",
           month: "long",
           year: "numeric",
         });
@@ -196,7 +196,7 @@ export function Dashboard() {
         description={`Ringkasan informasi pelayanan ${village ? "di Kelurahan " + village.name : "seluruh kelurahan"}`}
         action={
           <div className="dashboard-welcome">
-            {new Date().toLocaleDateString("id-ID", {
+            {new Date().toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta",
               weekday: "long",
               day: "numeric",
               month: "long",

@@ -434,7 +434,7 @@ export default function ApplyPage() {
 
   function saveReceipt() {
     if (!receipt) return;
-    const dateStr = receipt.created_at ? new Date(receipt.created_at).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
+    const dateStr = receipt.created_at ? new Date(receipt.created_at).toLocaleString('id-ID', { timeZone: "Asia/Jakarta" }) + " WIB" : new Date().toLocaleString('id-ID', { timeZone: "Asia/Jakarta" }) + " WIB";
     const text = `Bukti Permohonan Surat Kelurahan Cibodas\n` +
       `Nomor Tiket: ${receipt.ticket}\n` +
       `Tanggal Pengajuan: ${dateStr}\n` +
@@ -470,7 +470,7 @@ export default function ApplyPage() {
             Tanggal Pengajuan
           </div>
           <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-main)', marginTop: '4px' }}>
-            {new Date(receipt.created_at || Date.now()).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {new Date(receipt.created_at || Date.now()).toLocaleDateString('id-ID', { timeZone: "Asia/Jakarta", day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
         </div>
 

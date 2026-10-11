@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { cleanWaText, type WaStatus, type WaAutoReply, type AutoReplyMatchType } from "@/lib/wa-dashboard";
 
 const date = (value: string | null) =>
-  value ? new Date(value).toLocaleString("id-ID") : "Belum tersedia";
+  value ? new Date(value).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB" : "Belum tersedia";
 
 export function WaDashboard() {
   const [activeTab, setActiveTab] = useState<"status" | "replies">("status");
@@ -294,12 +294,12 @@ export function WaDashboard() {
 
   // Helper to render live preview text with dynamic variables
   function renderPreviewText(text: string): string {
-    const today = new Date().toLocaleDateString("id-ID", {
+    const today = new Date().toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta",
       day: "numeric",
       month: "long",
       year: "numeric",
     });
-    const nowTime = new Date().toLocaleTimeString("id-ID", {
+    const nowTime = new Date().toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta",
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -717,7 +717,7 @@ export function WaDashboard() {
               <div className="wa-chat-bubble">
                 {formReplyText ? renderPreviewText(formReplyText) : "(Pratinjau pesan kosong)"}
                 <span className="wa-bubble-time">
-                  {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                  {new Date().toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" })}
                 </span>
               </div>
             </div>
