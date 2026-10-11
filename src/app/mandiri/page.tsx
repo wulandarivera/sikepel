@@ -26,9 +26,9 @@ export default function PortalHome() {
       <div className="portal-cards">
         <Link className="portal-card action-apply" href="/mandiri/ajukan">
           <div className="portal-card-header">
-            <div className="portal-card-icon">1</div>
+            
             <div>
-              <div className="portal-card-step-badge">Langkah 1</div>
+              
               <div className="portal-card-title">Ajukan Permohonan Surat</div>
             </div>
           </div>
@@ -43,14 +43,14 @@ export default function PortalHome() {
 
         <Link className="portal-card action-track" href="/mandiri/lacak">
           <div className="portal-card-header">
-            <div className="portal-card-icon">2</div>
+            
             <div>
-              <div className="portal-card-step-badge">Langkah 2</div>
+              
               <div className="portal-card-title">Lacak Status Permohonan</div>
             </div>
           </div>
           <div className="portal-card-desc">
-            Pantau perkembangan dokumen Anda menggunakan nomor tiket dan kode akses rahasia permohonan.
+            Pantau perkembangan dokumen Anda menggunakan nomor tiket dan tanggal lahir pemohon.
           </div>
           <div className="portal-card-footer">
             <span>Cek Status Tiket</span>

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { Metadata } from 'next';
 import './portal.css';
+import { APP_VERSION } from '@/lib/version';
 
 export const metadata: Metadata = {
   title: 'Kelurahan Cibodas Mandiri — Pelayanan Surat Mandiri SIKEPEL',
@@ -41,6 +42,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       <main id="portal-main">{children}</main>
       <footer>
         &copy; {new Date().getFullYear()} Pelayanan Terpadu Kelurahan Cibodas · Sistem Informasi Pelayanan Kelurahan (SIKEPEL)
+        <small className="portal-version">Versi {APP_VERSION}</small>
       </footer>
     </div>
   );
