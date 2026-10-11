@@ -1,4 +1,5 @@
 "use client";
+import { APP_VERSION } from "@/lib/version";
 import { environmentLabel } from "@/lib/environment-label";
 import {
   createContext,
@@ -383,7 +384,7 @@ export function Workspace() {
               </span>
               <span className="row">
                 <ShieldCheck size={12} />{" "}
-                {environmentLabel(data)}
+                {environmentLabel(data)} · <small>Versi {APP_VERSION}</small>
               </span>
             </footer>
           </main>

@@ -1,4 +1,5 @@
 "use client";
+import { APP_VERSION } from "@/lib/version";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -168,7 +169,7 @@ export function Login() {
         </div>
         <footer>
           © {new Date().getFullYear()} SIKEPEL
-          <span>Sistem Informasi Pelayanan Kelurahan</span>
+          <small className="muted">Versi {APP_VERSION}</small>
           <button className="text-button" onClick={() => setModal("help")}>
             Bantuan masuk
           </button>

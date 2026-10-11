@@ -1,0 +1,2 @@
+import test from "node:test";import assert from "node:assert/strict";import {readFileSync} from "node:fs";
+test("public and workspace footers use central version",()=>{for(const file of ['components/login.tsx','components/wa-login.tsx','components/workspace.tsx','app/mandiri/layout.tsx','components/wa-dashboard.tsx']){const s=readFileSync('src/'+file,'utf8');assert.ok(s.includes('APP_VERSION'),file);assert.ok(s.includes('Versi {APP_VERSION}'),file);}});
