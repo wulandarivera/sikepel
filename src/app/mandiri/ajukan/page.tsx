@@ -298,7 +298,7 @@ export default function ApplyPage() {
 
   function validateStep1(): boolean {
     if (!checked) {
-      setError('Tekan Cek NIK sebelum melanjutkan.');
+      setError('Tekan Periksa isian identitas sebelum melanjutkan.');
       return false;
     }
     if (!/^\d{16}$/.test(resident.nik)) {
@@ -542,7 +542,7 @@ export default function ApplyPage() {
           <>
             <h2>Identitas dan kontak</h2>
             <p>
-              Masukkan NIK 16 digit dan tanggal lahir sesuai KTP, lalu tekan Cek NIK.
+              Masukkan NIK 16 digit dan tanggal lahir sesuai KTP, lalu tekan Periksa isian identitas.
               Pemeriksaan tidak membuka data pribadi tersimpan atau memastikan NIK terdaftar.
               Setelah pemeriksaan selesai, isi seluruh data pemohon; identitas akan diverifikasi petugas.
             </p>
@@ -582,7 +582,7 @@ export default function ApplyPage() {
               disabled={busy}
               onClick={() => void checkIdentity()}
             >
-              {busy ? 'Memeriksa...' : 'Cek NIK'}
+              {busy ? 'Memeriksa...' : 'Periksa isian identitas'}
             </button>
 
             {checked && (
@@ -744,8 +744,8 @@ export default function ApplyPage() {
             <div className="actions">
               <p id="identity-next-help" role="status">
                 {!checked
-                  ? 'Lanjut aktif setelah pemeriksaan NIK selesai. Isi NIK dan tanggal lahir, lalu tekan Cek NIK.'
-                  : 'Lengkapi seluruh data pemohon dan nomor WhatsApp sebelum menekan Lanjut. Mengubah NIK atau tanggal lahir memerlukan Cek NIK ulang.'}
+                  ? 'Lanjut aktif setelah pemeriksaan NIK selesai. Isi NIK dan tanggal lahir, lalu tekan Periksa isian identitas.'
+                  : 'Lengkapi seluruh data pemohon dan nomor WhatsApp sebelum menekan Lanjut. Mengubah NIK atau tanggal lahir memerlukan Periksa isian identitas ulang.'}
               </p>
               <button
                 type="button"

@@ -1,0 +1,2 @@
+import test from "node:test";import assert from "node:assert/strict";import {readFileSync} from "node:fs";
+test("identity action describes input check not population lookup",()=>{const s=readFileSync("src/app/mandiri/ajukan/page.tsx","utf8");assert.ok(!s.includes("Cek NIK"));assert.ok(s.includes("Periksa isian identitas"));assert.ok(s.includes("tidak membuka data pribadi tersimpan atau memastikan NIK terdaftar"));});
