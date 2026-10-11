@@ -1,0 +1,2 @@
+import test from "node:test";import assert from "node:assert/strict";import {readFileSync} from "node:fs";
+test("template editor uses modal focus trap and keyboard disclosures",()=>{const s=readFileSync('src/components/template-editor-modal.tsx','utf8');assert.ok(s.includes('<D.Content'));assert.ok(s.includes('onCloseAutoFocus'));assert.ok(s.includes('role="button"'));assert.ok(s.includes('aria-expanded={activeMenu'));assert.ok(s.includes('event.key === "Enter"'));});

@@ -1,5 +1,6 @@
 "use client";
 
+import * as D from "@radix-ui/react-dialog";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   X,
@@ -78,6 +79,7 @@ export function TemplateEditorModal({
   const [desktopAppName, setDesktopAppName] = useState("");
   const [syncingDesktop, setSyncingDesktop] = useState(false);
 
+  const openerRef = useRef<HTMLElement | null>(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const initializedRef = useRef(false);
 
@@ -498,8 +500,13 @@ export function TemplateEditorModal({
   };
 
   return (
-    <div className="template-editor-backdrop">
-      <div className="template-editor-window libreoffice-window">
+    <D.Root open onOpenChange={(open) => !open && onClose()}>
+    <D.Portal><D.Overlay className="template-editor-backdrop" />
+      <D.Content className="template-editor-window libreoffice-window" aria-describedby={undefined}
+        style={{position:"fixed",inset:"2vh 2vw",zIndex:1100}}
+        onOpenAutoFocus={() => {openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;}}
+        onCloseAutoFocus={(event) => {if(openerRef.current?.isConnected){event.preventDefault();openerRef.current.focus();}}}>
+        <D.Title style={{position:"absolute",width:1,height:1,overflow:"hidden",clipPath:"inset(50%)"}}>Editor template surat</D.Title>
         {/* LIBREOFFICE TITLEBAR */}
         <div className="libreoffice-titlebar">
           <div className="lo-titlebar-left">
@@ -559,6 +566,7 @@ export function TemplateEditorModal({
               className="lo-titlebar-close-btn"
               onClick={onClose}
               title="Tutup Editor"
+              aria-label="Tutup editor template"
             >
               <X size={16} />
             </button>
@@ -569,6 +577,9 @@ export function TemplateEditorModal({
         <div className="libreoffice-menubar">
           <div
             className="lo-menu-item"
+            role="button" tabIndex={0}
+            aria-expanded={activeMenu === "file"}
+            onKeyDown={(event) => {if(event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")){event.preventDefault();setActiveMenu(activeMenu === "file" ? null : "file");}}}
             onClick={() => setActiveMenu(activeMenu === "file" ? null : "file")}
           >
             <span>Berkas</span>
@@ -596,6 +607,9 @@ export function TemplateEditorModal({
 
           <div
             className="lo-menu-item"
+            role="button" tabIndex={0}
+            aria-expanded={activeMenu === "view"}
+            onKeyDown={(event) => {if(event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")){event.preventDefault();setActiveMenu(activeMenu === "view" ? null : "view");}}}
             onClick={() => setActiveMenu(activeMenu === "view" ? null : "view")}
           >
             <span>Tampilan</span>
@@ -648,6 +662,9 @@ export function TemplateEditorModal({
 
           <div
             className="lo-menu-item"
+            role="button" tabIndex={0}
+            aria-expanded={activeMenu === "insert"}
+            onKeyDown={(event) => {if(event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")){event.preventDefault();setActiveMenu(activeMenu === "insert" ? null : "insert");}}}
             onClick={() =>
               setActiveMenu(activeMenu === "insert" ? null : "insert")
             }
@@ -685,6 +702,9 @@ export function TemplateEditorModal({
 
           <div
             className="lo-menu-item"
+            role="button" tabIndex={0}
+            aria-expanded={activeMenu === "format"}
+            onKeyDown={(event) => {if(event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")){event.preventDefault();setActiveMenu(activeMenu === "format" ? null : "format");}}}
             onClick={() =>
               setActiveMenu(activeMenu === "format" ? null : "format")
             }
@@ -1139,7 +1159,7 @@ export function TemplateEditorModal({
             </label>
           </div>
         </div>
-      </div>
-    </div>
+      </D.Content>
+    </D.Portal></D.Root>
   );
 }
