@@ -90,10 +90,6 @@ export function Login() {
         </div>
       </section>
       <section className="login-panel">
-        <div className="login-top-brand">
-          <Image src="/assets/icon.webp" width={36} height={36} alt="" />
-          <b>SIKEPEL</b>
-        </div>
         <div className="login-card">
           <header>
             <p>Selamat Datang di</p>
@@ -105,7 +101,7 @@ export function Login() {
               className="login-logo"
               priority
             />
-            <h2>Sistem Informasi Pelayanan Kelurahan</h2>
+            <h2>Masuk petugas</h2>
             <div className="gold-line" />
             <p className="login-instruction">
               Masuk untuk melanjutkan pelayanan
