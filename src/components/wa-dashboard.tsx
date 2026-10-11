@@ -1,4 +1,5 @@
 "use client";
+import { APP_VERSION } from "@/lib/version";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cleanWaText, type WaStatus, type WaAutoReply, type AutoReplyMatchType } from "@/lib/wa-dashboard";
 
@@ -355,9 +356,11 @@ export function WaDashboard() {
       <p role="status" className="wa-notice">{notice}</p>
 
       {/* Tab Navigation */}
-      <nav className="wa-tabs" aria-label="Navigasi Menu Dashboard">
+      <nav className="wa-tabs" aria-label="Navigasi Menu Dashboard" role="tablist">
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === "status"}
           className={`wa-tab ${activeTab === "status" ? "wa-tab-active" : ""}`}
           onClick={() => setActiveTab("status")}
         >
@@ -365,6 +368,8 @@ export function WaDashboard() {
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === "replies"}
           className={`wa-tab ${activeTab === "replies" ? "wa-tab-active" : ""}`}
           onClick={() => {
             setActiveTab("replies");
@@ -406,21 +411,11 @@ export function WaDashboard() {
                 <dt>Mulai sesi</dt>
                 <dd>{date(status?.profile.startedAt || null)}</dd>
               </dl>
-              <button
-                className="wa-danger"
-                type="button"
-                disabled={busy || !status}
-                onClick={() => dialog.current?.showModal()}
-              >
-                Putus koneksi / Ganti nomor
-              </button>
-              <p className="wa-muted">
-                Sesi nomor lama akan dihapus. Pemindaian QR diperlukan untuk nomor baru.
-              </p>
+
             </section>
 
             <section className="wa-card wa-pair">
-              <h2>Hubungkan perangkat</h2>
+              <h2>{status?.connected ? "Perangkat terhubung" : "Hubungkan perangkat"}</h2>
               {qr ? (
                 <>
                   <img
@@ -447,6 +442,21 @@ export function WaDashboard() {
               </p>
             </section>
           </div>
+
+          <section className="wa-card wa-danger-zone" aria-labelledby="wa-session-danger">
+            <h2 id="wa-session-danger">Pengaturan sesi berisiko</h2>
+              <button
+                className="wa-danger"
+                type="button"
+                disabled={busy || !status}
+                onClick={() => dialog.current?.showModal()}
+              >
+                Putus koneksi / Ganti nomor
+              </button>
+              <p className="wa-muted">
+                Sesi nomor lama akan dihapus. Pemindaian QR diperlukan untuk nomor baru.
+              </p>
+          </section>
 
           <section className="wa-card">
             <h2>Uji kirim pesan</h2>
@@ -779,7 +789,7 @@ export function WaDashboard() {
         </div>
       </dialog>
 
-      <footer className="wa-muted">SIKEPEL · Dashboard privat layanan WhatsApp</footer>
+      <footer className="wa-muted">SIKEPEL · Dashboard privat layanan WhatsApp · Versi {APP_VERSION}</footer>
     </main>
   );
 }

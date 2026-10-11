@@ -22,3 +22,19 @@ test('identity instructions explain check then continue without changing gate', 
   assert.match(form, /aria-describedby="identity-next-help"/);
   assert.match(form, /disabled=\{!checked\}/);
 });
+
+test('WA tabs expose selected state and override generic button styles', () => {
+  const view = read('src/components/wa-dashboard.tsx');
+  assert.match(view, /aria-selected=\{activeTab === "status"\}/);
+  assert.match(view, /aria-selected=\{activeTab === "replies"\}/);
+  assert.match(read('src/app/wa/wa.css'), /\.wa-shell \.wa-tab-active/);
+});
+
+test('WA pairing title follows connection and logout lives in separate danger area', () => {
+  const view = read('src/components/wa-dashboard.tsx');
+  assert.match(view, /status\?\.connected \? "Perangkat terhubung" : "Hubungkan perangkat"/);
+  assert.match(view, /className="wa-card wa-danger-zone"/);
+  assert.match(view, /aria-labelledby="wa-session-danger"/);
+  assert.match(view, /action\("logout", \{ confirm: true \}\)/);
+  assert.match(view, /APP_VERSION/);
+});

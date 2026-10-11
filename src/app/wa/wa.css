@@ -26,3 +26,8 @@
 .wa-checkbox-label{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;user-select:none;margin:14px 0}
 .wa-checkbox-label input[type="checkbox"]{width:18px;height:18px;cursor:pointer}
 .wa-modal-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:20px}
+.wa-shell .wa-tab { background: #fff; color: #526277; border: 1px solid #cbd5e1; border-bottom: 3px solid transparent; border-radius: 8px 8px 0 0; }
+.wa-shell .wa-tab-active { background: #172c46; color: #fff; border-color: #172c46; border-bottom-color: #ffc442; }
+
+.wa-danger-zone { border-left: 4px solid #b8555c; box-shadow: none; }
+@media(max-width:640px) { .wa-tabs { gap: 6px; } .wa-shell .wa-tab { flex: 1; min-width: 0; padding: 10px 8px; font-size: 14px; } .wa-table-header-action { flex-direction: column; align-items: flex-start; gap: 12px; } }
