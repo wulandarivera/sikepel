@@ -28,7 +28,9 @@ export async function api<T = any>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const result = await fetch("/api/" + path, {
+  let result: Response;
+  try {
+    result = await fetch("/api/" + path, {
     ...options,
     headers: {
       ...(options.body && !(options.body instanceof FormData)
@@ -37,10 +39,19 @@ export async function api<T = any>(
       ...options.headers,
     },
   });
-  const data = await result.json();
+  } catch {
+    throw new APIError("Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.");
+  }
+  if (result.status === 401 && path !== "login" && typeof window !== "undefined")
+    window.location.assign("/login?expired=1");
+  let data: any;
+  try {
+    data = await result.json();
+    if (!data || typeof data !== "object") throw new Error("Invalid response");
+  } catch {
+    throw new APIError("Respons server tidak dapat dibaca. Coba lagi nanti.", undefined, result.status);
+  }
   if (!result.ok) {
-    if (result.status === 401 && path !== "login")
-      window.location.assign("/login?expired=1");
     throw new APIError(
       data.error || "Terjadi kesalahan.",
       data.fields,
