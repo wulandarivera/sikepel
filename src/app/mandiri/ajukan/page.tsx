@@ -542,8 +542,9 @@ export default function ApplyPage() {
           <>
             <h2>Identitas dan kontak</h2>
             <p>
-              Identitas akan diverifikasi petugas. NIK dan tanggal lahir tidak
-              membuka data pribadi tersimpan. Seluruh data warga pemohon wajib diisi lengkap.
+              Masukkan NIK 16 digit dan tanggal lahir sesuai KTP, lalu tekan Cek NIK.
+              Pemeriksaan tidak membuka data pribadi tersimpan atau memastikan NIK terdaftar.
+              Setelah pemeriksaan selesai, isi seluruh data pemohon; identitas akan diverifikasi petugas.
             </p>
             <div className="grid">
               <label>
@@ -741,9 +742,14 @@ export default function ApplyPage() {
             )}
 
             <div className="actions">
-              <span />
+              <p id="identity-next-help" role="status">
+                {!checked
+                  ? 'Lanjut aktif setelah pemeriksaan NIK selesai. Isi NIK dan tanggal lahir, lalu tekan Cek NIK.'
+                  : 'Lengkapi seluruh data pemohon dan nomor WhatsApp sebelum menekan Lanjut. Mengubah NIK atau tanggal lahir memerlukan Cek NIK ulang.'}
+              </p>
               <button
                 type="button"
+                aria-describedby="identity-next-help"
                 disabled={!checked}
                 onClick={next}
               >

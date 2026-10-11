@@ -12,5 +12,13 @@ test('home offers independent apply and tracking with actual credentials', () =>
 test('hero stays compact and footer uses central app version', () => {
   assert.match(read('src/app/mandiri/portal.css'), /max-width: 96px/);
   assert.match(read('src/app/mandiri/layout.tsx'), /APP_VERSION/);
-  assert.match(read('package.json'), /"version": "0.5.6"/);
+  assert.match(read('src/lib/version.ts'), /appPackage.version/);
+});
+
+test('identity instructions explain check then continue without changing gate', () => {
+  const form = read('src/app/mandiri/ajukan/page.tsx');
+  assert.match(form, /Masukkan NIK 16 digit dan tanggal lahir sesuai KTP/);
+  assert.match(form, /Lanjut aktif setelah pemeriksaan NIK selesai/);
+  assert.match(form, /aria-describedby="identity-next-help"/);
+  assert.match(form, /disabled=\{!checked\}/);
 });
