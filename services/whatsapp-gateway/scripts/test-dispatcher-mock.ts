@@ -115,6 +115,11 @@ async function runTests() {
     }),
   };
 
+  const previousSessionDir = config.sessionDir;
+  const fs = await import("node:fs/promises");
+  const fixtureSessionDir = await fs.mkdtemp("/tmp/wa-dispatch-fixture-");
+  // Ledger captures sessionDir at server construction; isolate before creation.
+  config.sessionDir = fixtureSessionDir;
   const testServer = createHttpServer(mockSessionManager);
   await new Promise<void>((resolve) => testServer.listen(0, "127.0.0.1", () => resolve()));
   const address = testServer.address() as any;
@@ -122,7 +127,7 @@ async function runTests() {
 
   const previousSecret = config.secret;
   config.secret = "test-only";
-  config.sessionDir = await (await import("node:fs/promises")).mkdtemp("/tmp/wa-dispatch-fixture-");
+
   const headers = { "Content-Type": "application/json", Authorization: "Bearer test-only" };
   try {
     // Check GET /health
@@ -172,7 +177,9 @@ async function runTests() {
     assert.equal(sentMessagePayload.content.text, "Halo warga Cibodas");
   } finally {
     config.secret = previousSecret;
-    testServer.close();
+    await new Promise<void>((resolve, reject) => testServer.close(err => err ? reject(err) : resolve()));
+    config.sessionDir = previousSessionDir;
+    await fs.rm(fixtureSessionDir, { recursive: true, force: true });
   }
 
   console.log("Semua pengujian mock dispatcher notifikasi berhasil 100%.");
