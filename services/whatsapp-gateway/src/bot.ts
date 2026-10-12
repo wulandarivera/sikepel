@@ -6,6 +6,8 @@ import {
   formatTicketNotFoundReply,
 } from "./formatters.js";
 import { getAutoReplyStore } from "./auto-replies.js";
+import { findTicketByCode, type MinimalTicketStatus } from "./db.js";
+import { safeWaNotice } from "./wa-notice.js";
 
 const greeted = new Set<string>();
 const seen = new Set<string>();
@@ -28,12 +30,19 @@ export function extractMessageText(msg: proto.IWebMessageInfo): string {
 export async function processMessageText(
   text: string,
   senderInfo?: { name?: string; phone?: string },
+  lookup: (ticket:string,phone:string)=>Promise<MinimalTicketStatus|null> = findTicketByCode,
 ): Promise<string | null> {
   const trimmed = text.trim();
   if (!trimmed) return null;
 
   const ticket = trimmed.match(TICKET_REGEX)?.[1]?.toUpperCase();
-  if (ticket) return `Lacak permohonan melalui https://mandiri.sikepel.biz.id/lacak?tiket=${encodeURIComponent(ticket)}. Gunakan tanggal lahir pemohon. Detail pribadi hanya tersedia di portal.`;
+  if (ticket) {
+    try {
+      const row = senderInfo?.phone ? await lookup(ticket, senderInfo.phone) : null;
+      if (row && row.ticket_code === ticket) return safeWaNotice({ticket:row.ticket_code,status:row.status});
+    } catch { /* Fail closed without revealing ticket existence. */ }
+    return `Lacak permohonan melalui https://mandiri.sikepel.biz.id/lacak?tiket=${encodeURIComponent(ticket)}. Gunakan tanggal lahir pemohon. Detail pribadi hanya tersedia di portal.`;
+  }
   const store = getAutoReplyStore();
   await store.init();
   const greetingSetting = store.getAll().find(item => item.keyword === "__greeting__");

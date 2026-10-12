@@ -71,27 +71,17 @@ export async function dispatchWhatsAppNotification(
 
 export const notifyPermohonanStatus = dispatchWhatsAppNotification;
 
-export async function getTicketStatusForBot(db: DB, ticketCode: string) {
+export async function getTicketStatusForBot(db: DB, ticketCode: string, senderPhone = "", villageId = "") {
   const normalized = ticketCode.trim().toUpperCase();
-  const row = await one(
-    db,
-    `
-    SELECT
-      r.ticket_code,
-      r.status,
-      r.revision_note,
-      r.contact_phone,
-      r.created_at,
-      r.verified_at,
-      t.name AS type_name,
-      r.form_data->'resident'->>'name' AS resident_name
-    FROM online_requests r
-    JOIN letter_types t ON t.id = r.type_id
-    WHERE UPPER(r.ticket_code) = $1
-    LIMIT 1
-  `,
-    [normalized],
-  );
-
-  return row || null;
+  const digits = senderPhone.replace(/^\+/, "");
+  const phone = digits.startsWith("08") ? `62${digits.slice(1)}` : digits;
+  if (!/^TIK-\d{6}-[A-Z0-9]{4,16}$/.test(normalized) || !/^628\d{7,12}$/.test(phone) || !/^[a-f0-9-]{36}$/i.test(villageId)) return null;
+  const row = await one(db, `
+    SELECT ticket_code, status FROM online_requests
+    WHERE UPPER(ticket_code) = $1 AND village_id = $3::uuid
+      AND CASE WHEN contact_phone LIKE '08%'
+        THEN '62' || SUBSTRING(contact_phone FROM 2)
+        ELSE REGEXP_REPLACE(contact_phone, '^\\+', '') END = $2
+    LIMIT 1`, [normalized, phone, villageId]);
+  return row ? { ticket_code: row.ticket_code, status: row.status } : null;
 }

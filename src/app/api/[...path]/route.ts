@@ -1,3 +1,5 @@
+import { ticketStatusResponse } from "@/server/wa-ticket-status";
+import { getTicketStatusForBot } from "@/server/whatsapp";
 import { mandiriResponse } from "@/server/mandiri";
 import { handleAdminPermohonanMandiri } from "@/server/permohonan-mandiri-admin";
 import { optionalPasswordSchema } from "@/lib/password-policy";
@@ -70,34 +72,15 @@ async function handle(
   try {
     const { path: p } = await context.params;
     const route = p.join("/"),
-      method = req.method,
-      db = await getDB();
-    if (route.startsWith("mandiri/")) return mandiriResponse(req, route.slice(8), db);
+      method = req.method;
     if (route === "internal/wa-bot/ticket-status" && method === "GET") {
-      const ticket = req.nextUrl.searchParams.get("ticket") || "";
-      if (!ticket) return json({ error: "Nomor tiket wajib diisi." }, 400);
-      const row = await one(
-        db,
-        `
-        SELECT
-          r.ticket_code,
-          r.status,
-          r.revision_note,
-          r.contact_phone,
-          r.created_at,
-          r.verified_at,
-          t.name AS type_name,
-          r.form_data->'resident'->>'name' AS resident_name
-        FROM online_requests r
-        JOIN letter_types t ON t.id = r.type_id
-        WHERE UPPER(r.ticket_code) = UPPER($1)
-        LIMIT 1
-      `,
-        [ticket.trim()],
-      );
-      if (!row) return json({ error: "Tiket tidak ditemukan." }, 404);
-      return json(row);
+      return ticketStatusResponse(req, {
+        secret: process.env.WA_GATEWAY_SECRET || "",
+        villageId: process.env.WA_GATEWAY_VILLAGE_ID || "",
+      }, async (ticket, sender, village) => getTicketStatusForBot(await getDB(), ticket, sender, village));
     }
+    const db = await getDB();
+    if (route.startsWith("mandiri/")) return mandiriResponse(req, route.slice(8), db);
     const token =
       req.cookies.get("sikepel_session")?.value ||
       req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
