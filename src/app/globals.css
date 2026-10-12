@@ -3109,3 +3109,12 @@ tbody tr:hover {
 .service-stat-card.has-count .service-stat-value {
   color: #0875e8;
 }
+
+.mandiri-filter-tabs { flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.mandiri-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.mandiri-communication { overflow-wrap: anywhere; }
+.mandiri-info-value { overflow-wrap: anywhere; min-width: 0; }
+@media (max-width: 600px) {
+ .mandiri-edit-grid { grid-template-columns: minmax(0, 1fr); }
+ .mandiri-filter-tabs button { white-space: normal; }
+}

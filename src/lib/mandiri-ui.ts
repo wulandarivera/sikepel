@@ -25,3 +25,17 @@ export async function portalFetch<T>(url:string,options?:RequestInit):Promise<T>
   if(!response.ok) throw new Error(data.error || 'Permintaan tidak dapat diproses. Coba lagi.');
   return data as T;
 }
+
+export type AdminAudit = {id:string;actor:string;action:string;metadata:{reason?:string;revision_note?:string;changed_fields?:string[]};created_at:string};
+export function adminHistory(detail:{riwayat?:AdminAudit[];status_riwayat?:AdminAudit[];audit_trail?:AdminAudit[]}):AdminAudit[] {
+ return detail.riwayat ?? detail.status_riwayat ?? detail.audit_trail ?? [];
+}
+
+export function adminCanEdit(status:string):boolean {
+ return ['PENDING_VERIFICATION','NEEDS_REVISION','APPROVED'].includes(status);
+}
+
+// No receipt or pickup projection exists in the current admin response.
+export function adminCommunication(_detail:{status:string}) {
+ return {delivery:'Bukti pengiriman WhatsApp belum tersedia',pickup:'Belum dikonfigurasi pada portal admin. Hubungi petugas untuk petunjuk resmi.'};
+}

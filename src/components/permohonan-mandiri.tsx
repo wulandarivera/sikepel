@@ -38,6 +38,7 @@ import {
 } from "./common";
 import { Button } from "./ui/button";
 import { Modal } from "./ui/dialog";
+import { adminHistory, adminCanEdit, adminCommunication, type AdminAudit } from "@/lib/mandiri-ui";
 import { dateID, type Row } from "@/lib/types";
 
 export type PermohonanStatus =
@@ -132,6 +133,7 @@ export function PermohonanMandiriList() {
     { key: "NEEDS_REVISION", label: "Perlu Perbaikan" },
     { key: "APPROVED", label: "Disetujui" },
     { key: "REJECTED", label: "Ditolak" },
+    { key: "COMPLETED", label: "Selesai" },
   ];
 
   const resetFilter = () => {
@@ -157,7 +159,7 @@ export function PermohonanMandiriList() {
             }}
             placeholder="Cari nomor tiket, NIK, atau nama pemohon…"
           />
-          <div className="tabs">
+          <div className="tabs mandiri-filter-tabs">
             {filterTabs.map((tab) => (
               <button
                 key={tab.key}
@@ -294,7 +296,7 @@ export function PermohonanMandiriDetail({ id }: { id: string }) {
     verified_by_name: string | null;
     revision_note: string | null;
     letter_id: string | null;
-    linked_letter: { id: string; number: string; status: string } | null;
+    letter: { id: string; number: string; status: string } | null;
     pemohon: {
       nik?: string;
       name?: string;
@@ -316,13 +318,9 @@ export function PermohonanMandiriDetail({ id }: { id: string }) {
       url: string;
       stream_url: string;
     }>;
-    audit_logs: Array<{
-      id: string;
-      actor: string;
-      action: string;
-      metadata: any;
-      created_at: string;
-    }>;
+    riwayat?: AdminAudit[];
+    status_riwayat?: AdminAudit[];
+    audit_trail?: AdminAudit[];
   }>("permohonan-mandiri/" + id);
 
   // Modals state
@@ -381,12 +379,13 @@ export function PermohonanMandiriDetail({ id }: { id: string }) {
   const pemohon = data.pemohon || {};
   const formData = data.form_data || {};
   const attachments = data.attachments || [];
-  const auditLogs = data.audit_logs || [];
+  const auditLogs = adminHistory(data);
+  const communication = adminCommunication(data);
   const status = data.status;
 
   const canAction =
     status === "PENDING_VERIFICATION" || status === "NEEDS_REVISION";
-  const canEditRedaksi = status !== "REJECTED";
+  const canEditRedaksi = adminCanEdit(status);
 
   // Phone formatting for WhatsApp link
   const rawPhone = data.contact_phone || "";
@@ -435,7 +434,7 @@ export function PermohonanMandiriDetail({ id }: { id: string }) {
         catatan_perbaikan: catatanRevisi.trim(),
         reason: catatanRevisi.trim(),
       });
-      notify("Permintaan perbaikan berkas berhasil dikirim.");
+      notify("Catatan perbaikan berhasil disimpan.");
       setModalRevisiOpen(false);
       setCatatanRevisi("");
       reload();
@@ -547,7 +546,7 @@ export function PermohonanMandiriDetail({ id }: { id: string }) {
         <div style={{ marginBottom: 20 }}>
           <Alert kind="warning">
             <strong>Menunggu Perbaikan Pemohon:</strong>{" "}
-            {data.revision_note || "Catatan perbaikan telah dikirim ke pemohon."}
+            {data.revision_note || "Catatan perbaikan tersedia pada portal pemohon."}
           </Alert>
         </div>
       )}
@@ -955,6 +954,15 @@ export function PermohonanMandiriDetail({ id }: { id: string }) {
         </Card>
       </div>
 
+      <div style={{ marginTop: 24 }}>
+        <Card title="WhatsApp & Pengambilan Surat" description="Status permohonan bukan bukti pesan diterima atau dibaca.">
+          <div className="mandiri-communication" style={{ padding: "0 20px 20px" }}>
+            <p><strong>Pengiriman WhatsApp:</strong> {communication.delivery}</p>
+            <p><strong>Petunjuk pengambilan:</strong> {communication.pickup}</p>
+            <p>Surat fisik diambil setelah dinyatakan siap. Tidak ada PDF surat lewat WhatsApp.</p>
+          </div>
+        </Card>
+      </div>
       {/* Riwayat & Jejak Audit */}
       <div style={{ marginTop: 24 }}>
         <Card
@@ -997,10 +1005,10 @@ export function PermohonanMandiriDetail({ id }: { id: string }) {
                           </span>
                         </td>
                         <td>
-                          {log.metadata?.reason && (
+                          {(log.metadata?.reason || log.metadata?.revision_note) && (
                             <div>
                               <strong>Alasan/Catatan:</strong>{" "}
-                              {log.metadata.reason}
+                              {log.metadata.reason || log.metadata.revision_note}
                             </div>
                           )}
                           {log.metadata?.changed_fields && (
@@ -1072,14 +1080,7 @@ export function PermohonanMandiriDetail({ id }: { id: string }) {
             </small>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 16,
-              marginBottom: 16,
-            }}
-          >
+          <div className="mandiri-edit-grid">
             <div>
               <label
                 style={{
