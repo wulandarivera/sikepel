@@ -55,7 +55,7 @@ try {
  await context.addCookies([{name:'sikepel_session',value:'fixture-operator',url:base}]);await page.goto(base+'/wa');await page.getByText('Terhubung',{exact:true}).waitFor();await page.getByText('Fixture activity').waitFor();
  await page.screenshot({path:path.join(artifacts,'desktop.png'),fullPage:true});
  await page.getByLabel('Nomor tujuan').fill('081234567890');await page.getByLabel('Pesan uji').fill('Uji fixture');await page.getByRole('button',{name:'Kirim pesan uji',exact:true}).click();await page.getByText('Pesan uji berhasil dikirim.').waitFor();assert.equal(sends,1);console.log('PASS profile/logs/test-send fixture');
- await page.getByRole('button', { name: 'Template Respon' }).click();
+ await page.getByRole('tab', { name: 'Template Respon' }).click();
  await page.getByText('Manajemen Template Balasan Otomatis').waitFor();
  await page.getByText('syarat domisili').waitFor();
  await page.getByRole('button', { name: 'Tambah Template Baru' }).click();
@@ -65,8 +65,28 @@ try {
  await page.getByText('Halo Budi Santoso, kantor berlokasi di Cibodas.').waitFor();
  await page.screenshot({ path: path.join(artifacts, 'template-respon-preview.png') });
  await page.getByRole('button', { name: 'Batal', exact: true }).click();
- await page.getByRole('button', { name: 'Koneksi & Status' }).click();
+ await page.getByRole('tab', { name: 'Koneksi & Status' }).click();
  console.log('PASS template respon tab/modal/live preview/zero emoji');
+ await page.getByRole('tab',{name:'Sapaan awal',exact:true}).click();
+ await page.getByRole('heading',{name:'Sapaan awal',exact:true}).waitFor();
+ assert.ok((await page.getByLabel('Teks sapaan').inputValue()).includes('mandiri.sikepel.biz.id'));
+ for(const width of [360,390,768,1440]){
+ await page.setViewportSize({width,height:900});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.screenshot({path:path.join(artifacts,`greeting-${width}.png`),fullPage:true});
+ }
+ await page.getByRole('tab',{name:'Notifikasi progres',exact:true}).click();
+ await page.getByText('Preview contoh, bukan data warga').waitFor();
+ await page.getByText('NEEDS_REVISION',{exact:true}).click();
+ await page.getByText(/Permohonan perlu perbaikan/).waitFor();
+ for(const width of [360,390,768,1440]){
+ await page.setViewportSize({width,height:900});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.screenshot({path:path.join(artifacts,`progression-${width}.png`),fullPage:true});
+ }
+ await page.getByRole('tab',{name:'Koneksi & Status'}).click();
+ console.log('PASS greeting/progression previews responsive 360/390/768/1440');
+
  assert.equal((await context.request.post(base+'/api/wa/logout',{headers:{Origin:'https://evil.test'},data:{confirm:true}})).status(),403);assert.equal(logouts,0);console.log('PASS CSRF');
  await page.getByRole('button',{name:'Putus koneksi / Ganti nomor'}).click();await page.getByRole('button',{name:'Batal',exact:true}).click();assert.equal(logouts,0);
  await page.getByRole('button',{name:'Putus koneksi / Ganti nomor'}).click();await page.getByRole('button',{name:'Ya, putus sesi'}).click();await page.getByText('Menunggu Scan QR',{exact:true}).waitFor();await page.getByAltText('QR penghubung WhatsApp privat').waitFor();assert.equal(logouts,1);assert.equal(await page.getByRole('button',{name:'Kirim pesan uji',exact:true}).isDisabled(),true);console.log('PASS logout cancellation/new QR/send disabled');

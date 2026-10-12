@@ -1,4 +1,5 @@
 "use client";
+import { safeWaNotice } from "@/lib/wa-notice";
 import { APP_VERSION } from "@/lib/version";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cleanWaText, type WaStatus, type WaAutoReply, type AutoReplyMatchType } from "@/lib/wa-dashboard";
@@ -7,7 +8,7 @@ const date = (value: string | null) =>
   value ? new Date(value).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB" : "Belum tersedia";
 
 export function WaDashboard() {
-  const [activeTab, setActiveTab] = useState<"status" | "replies">("status");
+  const [activeTab, setActiveTab] = useState<"status" | "replies" | "greeting" | "progression">("status");
   const [status, setStatus] = useState<WaStatus | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -316,6 +317,20 @@ export function WaDashboard() {
     );
   }
 
+  const defaultGreeting = "Selamat datang di SIKEPEL Kelurahan Cibodas.\nPengajuan surat: https://mandiri.sikepel.biz.id\nLacak permohonan: https://mandiri.sikepel.biz.id/lacak (gunakan tiket dan tanggal lahir pemohon).\nSurat fisik diambil di loket setelah dinyatakan siap. WhatsApp tidak mengirim PDF surat.\nKetik ajukan, status, persyaratan, atau bantuan.";
+  async function saveSetting(keyword: string, text: string, enabled: boolean) {
+    if (busy || repliesLoading) return;
+    if (!text.trim() || cleanWaText(text) !== text) {setActionError("Teks wajib diisi dan tidak boleh mengandung emoji."); return;}
+    setBusy(true); setActionError("");
+    const existing = replies.find(r => r.keyword === keyword);
+    try {
+      const res = await fetch(existing ? `/api/wa/auto-replies/${existing.id}` : "/api/wa/auto-replies", {method: existing ? "PUT" : "POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body:JSON.stringify({keyword,match_type:"EXACT",reply_text:text.trim(),is_active:enabled})});
+      if (!res.ok) throw new Error("Pengaturan belum tersimpan. Coba kembali.");
+      setNotice("Pengaturan tersimpan. Preview tidak mengirim pesan."); await loadReplies();
+    } catch(e) {setActionError(e instanceof Error ? e.message : "Gagal menyimpan pengaturan.");}
+    finally {setBusy(false);}
+  }
+
   const label = !status
     ? "Status belum tersedia"
     : status.connected
@@ -378,8 +393,31 @@ export function WaDashboard() {
         >
           Template Respon
         </button>
+        <button type="button" role="tab" aria-selected={activeTab === "greeting"} className={`wa-tab ${activeTab === "greeting" ? "wa-tab-active" : ""}`} onClick={() => setActiveTab("greeting")}>Sapaan awal</button>
+        <button type="button" role="tab" aria-selected={activeTab === "progression"} className={`wa-tab ${activeTab === "progression" ? "wa-tab-active" : ""}`} onClick={() => setActiveTab("progression")}>Notifikasi progres</button>
       </nav>
 
+      {activeTab === "greeting" && <section className="wa-card">
+        <h2>Sapaan awal</h2>
+        <p>Sapaan dikirim sekali per kontak selama proses gateway aktif. Pesan ulang dan grup diabaikan. Setelah restart, sapaan dapat dikirim kembali.</p>
+        <p>Status: {replies.find(r => r.keyword === "__greeting__")?.is_active === false ? "Nonaktif" : "Aktif"}</p>
+        <form onSubmit={event => {event.preventDefault(); const data = new FormData(event.currentTarget); void saveSetting("__greeting__", String(data.get("greeting") || ""), data.get("enabled") === "on");}}>
+          <label htmlFor="wa-greeting">Teks sapaan</label>
+          <textarea id="wa-greeting" name="greeting" rows={6} maxLength={2000} required key={replies.find(r => r.keyword === "__greeting__")?.updated_at || "default"} defaultValue={replies.find(r => r.keyword === "__greeting__")?.reply_text || defaultGreeting} />
+          <label><input type="checkbox" name="enabled" defaultChecked={replies.find(r => r.keyword === "__greeting__")?.is_active !== false} /> Aktifkan sapaan</label>
+          <button disabled={busy || repliesLoading} type="submit">Simpan sapaan</button>
+        </form>
+        <h3>Preview tersimpan</h3><pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{replies.find(r => r.keyword === "__greeting__")?.reply_text || defaultGreeting}</pre>
+        <p className="wa-muted">Preview tidak mengirim pesan. Status aktif tidak menunjukkan koneksi perangkat.</p>
+      </section>}
+      {activeTab === "progression" && <section className="wa-card">
+        <h2>Notifikasi progres</h2>
+        <p>Status: {replies.find(r => r.keyword === "__notifications__")?.is_active === false ? "Nonaktif" : "Aktif"}</p>
+        <p>Notifikasi mengikuti perubahan status permohonan. Nama, jenis surat, catatan petugas, dokumen, dan PDF tidak dikirim. Status berulang ditekan; detail dibuka melalui portal dengan tiket dan tanggal lahir.</p>
+        <button disabled={busy || repliesLoading} type="button" onClick={() => void saveSetting("__notifications__", "Notifikasi status SIKEPEL", replies.find(r => r.keyword === "__notifications__")?.is_active === false)}>{replies.find(r => r.keyword === "__notifications__")?.is_active === false ? "Aktifkan notifikasi" : "Nonaktifkan notifikasi"}</button>
+        <h3>Preview contoh, bukan data warga</h3>
+        {(["PENDING_VERIFICATION","APPROVED","NEEDS_REVISION","REJECTED","COMPLETED"] as const).map(state => <details key={state}><summary>{state}</summary><pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{safeWaNotice({ticket:"TIK-202610-CONTOH01",status:state})}</pre></details>)}
+      </section>}
       {/* TAB 1: STATUS & KONEKSI */}
       {activeTab === "status" && (
         <>
@@ -563,7 +601,7 @@ export function WaDashboard() {
               </thead>
               <tbody>
                 {replies.length > 0 ? (
-                  replies.map((item) => {
+                  replies.filter(reply => !reply.keyword.startsWith("__")).map((item) => {
                     const matchLabel =
                       item.match_type === "EXACT"
                         ? "Sama Persis"
