@@ -215,7 +215,7 @@ export class AutoReplyStore {
         await pool.query(
           `INSERT INTO wa_auto_replies (id, keyword, match_type, reply_text, is_active, created_by, created_at, updated_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [item.id, item.keyword, item.match_type, item.is_active, item.created_by, item.created_at, item.updated_at],
+          [item.id, item.keyword, item.match_type, item.reply_text, item.is_active, item.created_by, item.created_at, item.updated_at],
         );
       } catch (err: any) {
         logger.warn({ error: err.message }, "Gagal menyimpan auto-reply ke PostgreSQL");
@@ -296,7 +296,7 @@ export class AutoReplyStore {
     const lower = trimmed.toLowerCase();
 
     for (const item of this.items.values()) {
-      if (!item.is_active) continue;
+      if (!item.is_active || item.keyword.startsWith("__")) continue;
 
       let matched = false;
       const kw = item.keyword.trim().toLowerCase();

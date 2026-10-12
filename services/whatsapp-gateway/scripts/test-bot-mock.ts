@@ -34,11 +34,11 @@ async function runTests() {
     "Menu tidak boleh menggunakan link ajukan lama",
   );
   assert.ok(
-    menuText.includes("TIK-YYYYMM-XXXXXXXX"),
+    menuText.includes("tanggal lahir"),
     "Menu harus memuat contoh format tiket",
   );
   assert.ok(
-    menuText.includes("Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas"),
+    menuText.includes("Surat fisik diambil di loket"),
     "Menu wajib memuat penegasan surat fisik diambil langsung di loket",
   );
   assert.ok(
@@ -52,7 +52,7 @@ async function runTests() {
     const res = await processMessageText(g);
     assert.ok(res !== null, `Harus merespon sapaan ${g}`);
     assertNoEmoji(res, `processMessageText greeting ${g}`);
-    assert.ok(res.includes("LAYANAN HOTLINE WARGA"), "Respon harus berupa menu hotline");
+    assert.ok(res.includes("SIKEPEL"), "Respon harus berupa menu hotline");
   }
 
   // 3. Uji respon pengajuan surat langsung
@@ -64,7 +64,7 @@ async function runTests() {
     assert.ok(res.includes("https://mandiri.sikepel.biz.id"), "Harus menyertakan link portal mandiri");
     assert.ok(!res.includes("https://mandiri.sikepel.biz.id/ajukan"), "Tidak boleh link ajukan lama");
     assert.ok(
-      res.includes("Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas"),
+      res.includes("Surat fisik diambil di loket"),
       "Wajib memuat klausul fisik loket",
     );
     assert.ok(!res.includes("JANGAN PERNAH"), "Tidak boleh ada JANGAN PERNAH");

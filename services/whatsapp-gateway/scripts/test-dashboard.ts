@@ -12,6 +12,7 @@ for (const endpoint of ["/send", "/notify"]) {
   for (const early of [false, true]) {
     test(`${endpoint}: repeated ack/read ${early ? "before" : "after"} send result keeps one activity`, async () => {
       const previous = config.secret;
+      config.sessionDir = await fs.mkdtemp("/tmp/wa-dashboard-fixture-");
       const manager = new WhatsAppSessionManager();
       const internal = manager as any;
       const events = new EventEmitter();
@@ -26,7 +27,7 @@ for (const endpoint of ["/send", "/notify"]) {
       await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
       try {
         config.secret = "test-only";
-        const body = endpoint === "/send" ? { to: "08123456789", text: "Test" } : { to: "08123456789", ticket: "TEST", status: "APPROVED", type_name: "Test" };
+        const body = endpoint === "/send" ? { to: "08123456789", text: "Test" } : { to: "08123456789", ticket: early ? "TIK-202610-EARLY123" : "TIK-202610-LATE1234", status: "APPROVED", type_name: "Test" };
         const response = await fetch(`http://127.0.0.1:${(server.address() as any).port}${endpoint}`, {
           method: "POST", headers: { authorization: "Bearer test-only", "content-type": "application/json" }, body: JSON.stringify(body),
         });

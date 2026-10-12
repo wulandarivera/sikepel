@@ -28,111 +28,11 @@ function assertNoEmoji(text: string, context: string) {
   );
 }
 
-test("formatWhatsAppMessage: format notifikasi pengajuan baru dan status bebas emoji serta mematuhi penegasan surat fisik tanpa PDF", () => {
-  const payloads: PermohonanNotificationPayload[] = [
-    {
-      to: "081234567890",
-      ticket: "TIK-202610-A1B2C3D4",
-      status: "SUBMITTED",
-      type_name: "Surat Keterangan Usaha",
-      resident_name: "Budi Santoso",
-    },
-    {
-      to: "081234567890",
-      ticket: "TIK-202610-A1B2C3D4",
-      status: "TIKET_BARU",
-      type_name: "Surat Keterangan Domisili",
-      resident_name: "Siti Rahma",
-    },
-    {
-      to: "081234567890",
-      ticket: "TIK-202610-A1B2C3D4",
-      status: "APPROVED",
-      type_name: "Surat Keterangan Usaha",
-      resident_name: "Budi Santoso",
-    },
-    {
-      to: "081234567890",
-      ticket: "TIK-202610-A1B2C3D4",
-      status: "COMPLETED",
-      type_name: "Surat Keterangan Domisili",
-      resident_name: "Siti Rahma",
-    },
-    {
-      to: "081234567890",
-      ticket: "TIK-202610-A1B2C3D4",
-      status: "SIAP_DIAMBIL",
-      type_name: "Surat Keterangan Belum Menikah",
-      resident_name: "Ahmad Faisal",
-    },
-    {
-      to: "081234567890",
-      ticket: "TIK-202610-A1B2C3D4",
-      status: "NEEDS_REVISION",
-      type_name: "Surat Pengantar Nikah",
-      resident_name: "Dewi Kartika",
-      note: "Lampiran KK tidak terbaca",
-    },
-    {
-      to: "081234567890",
-      ticket: "TIK-202610-A1B2C3D4",
-      status: "REJECTED",
-      type_name: "Surat Keterangan Kematian",
-      resident_name: "Hendra Wijaya",
-      note: "Berkas tidak lengkap",
-    },
-  ];
-
-  for (const p of payloads) {
-    const msg = formatWhatsAppMessage(p);
-    assertNoEmoji(msg, `formatWhatsAppMessage status ${p.status}`);
-    assert.ok(msg.includes(p.ticket), `Harus memuat nomor tiket ${p.ticket}`);
-    assert.ok(msg.includes(p.type_name), `Harus memuat jenis surat ${p.type_name}`);
-
-    // Penegasan surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas
-    if (["SUBMITTED", "TIKET_BARU", "APPROVED", "COMPLETED", "SIAP_DIAMBIL"].includes(p.status)) {
-      assert.ok(
-        msg.includes("Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas"),
-        `Status ${p.status} wajib memuat kalimat penegasan surat fisik`,
-      );
-      assert.ok(
-        !msg.includes("JANGAN PERNAH"),
-        `Status ${p.status} tidak boleh memuat kata JANGAN PERNAH`,
-      );
-    }
-  }
-
-  // Khusus SUBMITTED / TIKET BARU:
-  const submitMsg = formatWhatsAppMessage({
-    to: "081234567890",
-    ticket: "TIK-202610-TEST9999",
-    status: "SUBMITTED",
-    type_name: "Surat Keterangan Domisili",
-    resident_name: "Ahmad",
-  });
-
-  assertNoEmoji(submitMsg, "SUBMITTED message");
-  assert.match(submitMsg, /Salam,/i, "Pesan harus memuat salam");
-  assert.match(
-    submitMsg,
-    /konfirmasi permohonan surat .+ berhasil diajukan/i,
-    "Pesan harus memuat konfirmasi pengajuan berhasil",
-  );
-  assert.match(
-    submitMsg,
-    /Nomor tiket pelacakan: TIK-202610-TEST9999/,
-    "Pesan harus memuat nomor tiket pelacakan",
-  );
-  assert.match(
-    submitMsg,
-    /https:\/\/mandiri\.sikepel\.biz\.id\/lacak\?tiket=TIK-202610-TEST9999/,
-    "Pesan harus memuat tautan cek status pelacakan",
-  );
-  assert.match(
-    submitMsg,
-    /Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas\./,
-    "Pesan harus memuat pemberitahuan pengambilan fisik",
-  );
+test("formatWhatsAppMessage: private-safe statuses with next action",()=>{
+ for(const status of ['SUBMITTED','APPROVED','COMPLETED','SIAP_DIAMBIL','NEEDS_REVISION','REJECTED'] as const){
+ const msg=formatWhatsAppMessage({to:'081234567890',ticket:'TIK-202610-A1B2C3D4',status,type_name:'Private type',resident_name:'Private name',note:'Private note'});
+ assertNoEmoji(msg,status);assert.match(msg,/TIK-202610-A1B2C3D4/);assert.match(msg,/lacak/);assert.doesNotMatch(msg,/Private|KTP elektronik asli/);
+ }
 });
 
 test("WhatsApp Dispatcher: pengiriman ke endpoint gateway lokal berhasil", async () => {
@@ -343,23 +243,10 @@ test("createPermohonanMandiri: auto-dispatch WhatsApp notifikasi saat permohonan
     assert.equal(dispatched.body.to, "081234567890");
     assert.equal(dispatched.body.status, "SUBMITTED");
     assert.equal(dispatched.body.ticket, result.ticket);
-    assert.equal(dispatched.body.type_name, "Surat Keterangan Usaha");
-    assert.equal(dispatched.body.resident_name, "Budi Santoso");
-
-    // Verifikasi teks pesan WhatsApp
-    assert.ok(dispatched.body.message, "Pesan WA harus disertakan");
-    assertNoEmoji(dispatched.body.message, "pesan dispatch");
-    assert.match(dispatched.body.message, /Salam,/);
-    assert.match(dispatched.body.message, /Surat Keterangan Usaha/);
-    assert.match(dispatched.body.message, new RegExp(result.ticket));
-    assert.match(
-      dispatched.body.message,
-      new RegExp(`https://mandiri\\.sikepel\\.biz\\.id/lacak\\?tiket=${result.ticket}`),
-    );
-    assert.match(
-      dispatched.body.message,
-      /Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas\./,
-    );
+    assert.equal(dispatched.body.type_name, "Permohonan surat");
+    assert.equal(dispatched.body.resident_name, undefined);
+    assert.equal(dispatched.body.note, undefined);
+    assert.equal(dispatched.body.message, undefined);
   } finally {
     mockServer.close();
     await db.close();

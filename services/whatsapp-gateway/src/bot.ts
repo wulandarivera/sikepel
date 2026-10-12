@@ -34,13 +34,16 @@ export async function processMessageText(
 
   const ticket = trimmed.match(TICKET_REGEX)?.[1]?.toUpperCase();
   if (ticket) return `Lacak permohonan melalui https://mandiri.sikepel.biz.id/lacak?tiket=${encodeURIComponent(ticket)}. Gunakan tanggal lahir pemohon. Detail pribadi hanya tersedia di portal.`;
+  const store = getAutoReplyStore();
+  await store.init();
+  const greetingSetting = store.getAll().find(item => item.keyword === "__greeting__");
+  const isGreeting = /^(halo|hai|hi|hello|ass?alamualaikum|selamat (pagi|siang|sore|malam))[!. ]*$/i.test(trimmed);
+  if (isGreeting) return greetingSetting ? (greetingSetting.is_active ? greetingSetting.reply_text : null) : formatBotMenu();
   const lower = trimmed.toLowerCase();
   if (/status|lacak|tiket/.test(lower)) return "Lacak permohonan: https://mandiri.sikepel.biz.id/lacak. Siapkan nomor tiket dan tanggal lahir pemohon.";
   if (/ajukan|bikin surat|buat surat|daftar surat|link|tautan/.test(lower)) return "Ajukan surat: https://mandiri.sikepel.biz.id. Pilih jenis surat, ikuti persyaratan pada portal, lalu simpan tiket. Surat fisik diambil di loket setelah dinyatakan siap; tidak ada PDF lewat WhatsApp.";
   if (/syarat|persyaratan/.test(lower)) return "Persyaratan mengikuti jenis surat pada portal: https://mandiri.sikepel.biz.id. Pilih layanan untuk melihat daftar dokumen terbaru.";
   if (/jam|lokasi|alamat|bantuan|petugas/.test(lower)) return "Untuk jam layanan, lokasi, atau bantuan petugas, hubungi loket pelayanan Kelurahan Cibodas. Pengajuan dan pelacakan: https://mandiri.sikepel.biz.id.";
-  const store = getAutoReplyStore();
-  await store.init();
   const custom = store.findMatchingReply(trimmed, senderInfo);
   if (custom) return custom;
   if (/^(halo|hai|hi|hello|ass?alamualaikum|menu|selamat (pagi|siang|sore|malam)|info layanan)[!. ]*$/i.test(trimmed)) return formatBotMenu();
@@ -75,7 +78,7 @@ export async function handleIncomingMessage(
     const senderPhone = jid ? jid.replace(/@.*$/, "") : "";
     const greeting = /^(halo|hai|hi|hello|ass?alamualaikum|selamat (pagi|siang|sore|malam))[!. ]*$/i.test(text.trim());
     if (greeting && greeted.has(jid)) return;
-    const reply = greeting ? formatBotMenu() : await processMessageText(text, { name: senderName, phone: senderPhone });
+    const reply = await processMessageText(text, { name: senderName, phone: senderPhone });
     if (!reply) return;
 
     if (greeting) greeted.add(jid);

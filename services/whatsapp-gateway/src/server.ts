@@ -274,6 +274,10 @@ export function createHttpServer(
           });
         }
 
+        const settings = getAutoReplyStore();
+        await settings.init();
+        const progression = settings.getAll().find(item => item.keyword === "__notifications__");
+        if (progression && !progression.is_active) return sendJsonResponse(res, 200, {ok:true, disabled:true});
         const messageText = formatNotificationMessage(body);
         const sock = sessionManager.getSocket();
         const sockStatus = sessionManager.getStatus();

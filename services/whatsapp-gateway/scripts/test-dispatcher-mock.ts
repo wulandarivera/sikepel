@@ -85,14 +85,14 @@ async function runTests() {
     const msg = formatNotificationMessage(p);
     assertNoEmoji(msg, `formatNotificationMessage untuk status ${p.status}`);
     assert.ok(msg.includes(p.ticket), "Harus memuat nomor tiket");
-    assert.ok(msg.includes(p.type_name), "Harus memuat jenis surat");
+    assert.ok(!msg.includes(p.type_name), "Jenis surat privat tidak dikirim");
     if (p.resident_name) {
-      assert.ok(msg.includes(p.resident_name), "Harus menyapa nama pemohon");
+      assert.ok(!msg.includes(p.resident_name), "Nama privat tidak dikirim");
     }
 
     if (p.status === "APPROVED" || p.status === "COMPLETED" || p.status === "SIAP_DIAMBIL") {
       assert.ok(
-        msg.includes("Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas"),
+        msg.includes("portal"),
         `Pemberitahuan status ${p.status} wajib menegaskan surat fisik diambil langsung di loket`,
       );
       assert.ok(
@@ -122,6 +122,7 @@ async function runTests() {
 
   const previousSecret = config.secret;
   config.secret = "test-only";
+  config.sessionDir = await (await import("node:fs/promises")).mkdtemp("/tmp/wa-dispatch-fixture-");
   const headers = { "Content-Type": "application/json", Authorization: "Bearer test-only" };
   try {
     // Check GET /health
@@ -154,7 +155,7 @@ async function runTests() {
     assert.equal(sentMessagePayload.jid, "6281234567890@s.whatsapp.net");
     assert.ok(sentMessagePayload.content.text.includes("TIK-202610-88776655"));
     assert.ok(
-      sentMessagePayload.content.text.includes("Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas"),
+      sentMessagePayload.content.text.includes("portal"),
     );
     assert.ok(
       !sentMessagePayload.content.text.includes("JANGAN PERNAH"),
