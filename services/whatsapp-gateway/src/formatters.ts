@@ -1,3 +1,4 @@
+import { safeWaNotice } from "./wa-notice.js";
 export interface TicketRecord {
   ticket_code: string;
   type_name: string;
@@ -100,75 +101,12 @@ export function formatTicketNotFoundReply(ticketCode: string): string {
 export interface StatusNotificationPayload {
   to: string;
   ticket: string;
-  status: "APPROVED" | "COMPLETED" | "SIAP_DIAMBIL" | "REJECTED" | "NEEDS_REVISION";
+  status: "SUBMITTED" | "TIKET_BARU" | "TIKET BARU" | "PENDING_VERIFICATION" | "APPROVED" | "COMPLETED" | "SIAP_DIAMBIL" | "REJECTED" | "NEEDS_REVISION";
   type_name: string;
   resident_name?: string;
   note?: string;
 }
 
 export function formatNotificationMessage(payload: StatusNotificationPayload): string {
-  const nama = payload.resident_name ? `Yth. Sdr/i ${payload.resident_name},\n\n` : "";
-  const code = payload.ticket;
-  const jenis = payload.type_name || "Surat Keterangan";
-
-  switch (payload.status) {
-    case "APPROVED":
-      return [
-        "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
-        "",
-        `${nama}Permohonan surat ${jenis} Anda dengan nomor tiket ${code} telah DISETUJUI oleh operator.`,
-        "",
-        "Draf surat dinas sedang diproses untuk penandatanganan resmi.",
-        "",
-        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas. Anda akan diberitahu kembali setelah surat siap diambil.",
-      ].join("\n");
-
-    case "COMPLETED":
-    case "SIAP_DIAMBIL":
-      return [
-        "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
-        "",
-        `${nama}Permohonan surat ${jenis} Anda dengan nomor tiket ${code} saat ini SIAP DIAMBIL di loket pelayanan Kantor Kelurahan Cibodas.`,
-        "",
-        "Persyaratan Pengambilan:",
-        "1. Membawa KTP elektronik asli pemohon.",
-        "2. Membawa dokumen persyaratan asli untuk verifikasi akhir di loket.",
-        "",
-        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas.",
-      ].join("\n");
-
-    case "NEEDS_REVISION":
-      return [
-        "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
-        "",
-        `${nama}Permohonan surat ${jenis} Anda dengan nomor tiket ${code} MEMERLUKAN PERBAIKAN BERKAS.`,
-        "",
-        "Catatan dari Petugas:",
-        `"${payload.note || "Silakan periksa kembali kelengkapan data dan dokumen persyaratan."}"`,
-        "",
-        "Tautan Perbaikan Mandiri:",
-        `https://mandiri.sikepel.biz.id/lacak?tiket=${encodeURIComponent(code)}`,
-      ].join("\n");
-
-    case "REJECTED":
-      return [
-        "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
-        "",
-        `${nama}Permohonan surat ${jenis} Anda dengan nomor tiket ${code} DITOLAK oleh operator.`,
-        "",
-        "Alasan Penolakan:",
-        `"${payload.note || "Persyaratan atau verifikasi data tidak terpenuhi."}"`,
-        "",
-        "Silakan hubungi loket pelayanan Kantor Kelurahan Cibodas untuk penjelasan lebih lanjut.",
-      ].join("\n");
-
-    default:
-      return [
-        "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
-        "",
-        `${nama}Status permohonan surat ${jenis} Anda dengan nomor tiket ${code} telah diperbarui menjadi: ${payload.status}.`,
-        "",
-        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas.",
-      ].join("\n");
-  }
+  return safeWaNotice(payload);
 }

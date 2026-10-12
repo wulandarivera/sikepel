@@ -1,3 +1,4 @@
+import { safeWaNotice } from "../lib/wa-notice";
 import { type DB, one } from "./db";
 
 export interface PermohonanNotificationPayload {
@@ -19,88 +20,7 @@ export interface PermohonanNotificationPayload {
 }
 
 export function formatWhatsAppMessage(payload: PermohonanNotificationPayload): string {
-  const nama = payload.resident_name ? `Yth. Sdr/i ${payload.resident_name},\n\n` : "";
-  const code = payload.ticket;
-  const jenis = payload.type_name || "Surat Keterangan";
-
-  switch (payload.status) {
-    case "SUBMITTED":
-    case "TIKET_BARU":
-    case "TIKET BARU":
-    case "PENDING_VERIFICATION":
-      return [
-        "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
-        "",
-        `${nama}Salam, konfirmasi permohonan surat ${jenis} Anda berhasil diajukan.`,
-        "",
-        `Nomor tiket pelacakan: ${code}`,
-        "Untuk melacak status permohonan, gunakan Tanggal Lahir pemohon yang didaftarkan saat pengajuan.",
-        `Tautan cek status: https://mandiri.sikepel.biz.id/lacak?tiket=${encodeURIComponent(code)}`,
-        "",
-        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas.",
-      ].join("\n");
-
-    case "APPROVED":
-      return [
-        "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
-        "",
-        `${nama}Permohonan surat ${jenis} Anda dengan nomor tiket ${code} telah DISETUJUI oleh operator.`,
-        "",
-        "Draf surat dinas sedang diproses untuk penandatanganan resmi.",
-        "",
-        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas. Anda akan diberitahu kembali setelah surat siap diambil.",
-      ].join("\n");
-
-    case "COMPLETED":
-    case "SIAP_DIAMBIL":
-      return [
-        "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
-        "",
-        `${nama}Permohonan surat ${jenis} Anda dengan nomor tiket ${code} saat ini SIAP DIAMBIL di loket pelayanan Kantor Kelurahan Cibodas.`,
-        "",
-        "Persyaratan Pengambilan:",
-        "1. Membawa KTP elektronik asli pemohon.",
-        "2. Membawa berkas persyaratan asli untuk verifikasi akhir di loket.",
-        "",
-        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas.",
-      ].join("\n");
-
-    case "NEEDS_REVISION":
-      return [
-        "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
-        "",
-        `${nama}Permohonan surat ${jenis} Anda dengan nomor tiket ${code} MEMERLUKAN PERBAIKAN BERKAS.`,
-        "",
-        "Catatan Petugas:",
-        `"${payload.note || "Silakan periksa kembali kelengkapan data dan berkas persyaratan."}"`,
-        "",
-        "Tautan Perbaikan Mandiri:",
-        `https://mandiri.sikepel.biz.id/lacak?tiket=${encodeURIComponent(code)}`,
-        "",
-        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas.",
-      ].join("\n");
-
-    case "REJECTED":
-      return [
-        "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
-        "",
-        `${nama}Permohonan surat ${jenis} Anda dengan nomor tiket ${code} DITOLAK oleh operator.`,
-        "",
-        "Alasan Penolakan:",
-        `"${payload.note || "Persyaratan atau verifikasi data tidak terpenuhi."}"`,
-        "",
-        "Silakan hubungi loket pelayanan Kantor Kelurahan Cibodas untuk penjelasan lebih lanjut.",
-      ].join("\n");
-
-    default:
-      return [
-        "PEMBERITAHUAN SIKEPEL KELURAHAN CIBODAS",
-        "",
-        `${nama}Status permohonan surat ${jenis} Anda dengan nomor tiket ${code} telah diperbarui: ${payload.status}.`,
-        "",
-        "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas.",
-      ].join("\n");
-  }
+  return safeWaNotice(payload);
 }
 
 export async function dispatchWhatsAppNotification(
@@ -126,8 +46,10 @@ export async function dispatchWhatsAppNotification(
       method: "POST",
       headers,
       body: JSON.stringify({
-        ...payload,
-        message: formatWhatsAppMessage(payload),
+        to: payload.to,
+        ticket: payload.ticket,
+        status: payload.status,
+        type_name: "Permohonan surat",
       }),
       signal: AbortSignal.timeout(3000),
     });

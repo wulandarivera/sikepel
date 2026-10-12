@@ -1,3 +1,5 @@
+import { NotificationLedger } from "./notification-ledger.js";
+import { WA_STATUSES, canonicalWaStatus } from "./wa-notice.js";
 import http from "node:http";
 import { timingSafeEqual } from "node:crypto";
 import { config } from "./config.js";
@@ -60,6 +62,7 @@ function sendJsonResponse(
 export function createHttpServer(
   sessionManager: WhatsAppSessionManager,
 ): http.Server {
+  const notificationLedger = new NotificationLedger();
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     const method = req.method || "GET";
@@ -263,7 +266,7 @@ export function createHttpServer(
         const body = (await parseJsonBody(req)) as StatusNotificationPayload;
         const { to, ticket, status, type_name } = body;
 
-        if (!to || !ticket || !status || !type_name) {
+        if (typeof to !== "string" || !/^(?:\+?62|0|8)[0-9]{8,13}$/.test(to) || typeof ticket !== "string" || !/^TIK-\d{6}-[A-Za-z0-9]{4,16}$/.test(ticket) || !WA_STATUSES.includes(status as any)) {
           return sendJsonResponse(res, 400, {
             ok: false,
             error:
@@ -286,18 +289,19 @@ export function createHttpServer(
         }
 
         const jid = normalizePhoneToJid(to);
+        const delivered = await notificationLedger.run(`${jid}:${ticket}`, canonicalWaStatus(status), async () => {
         const sent = await sock.sendMessage(jid, { text: messageText });
-
         sessionManager.logs?.add("out", "sent", sent?.key);
-        if (sent?.key?.id && sent?.message) {
-          sessionManager.storeMessage(sent.key.id, sent.message);
-        }
+        if (sent?.key?.id && sent?.message) sessionManager.storeMessage(sent.key.id, sent.message);
+        });
+
         logger.info("Notifikasi status permohonan berhasil dikirim ke pemohon");
         return sendJsonResponse(res, 200, {
           ok: true,
           recipient: jid,
           ticket,
           status,
+          deduped: !delivered,
         });
       } catch (err: any) {
         logger.error({ error: err.message }, "Kesalahan pada POST /notify");
