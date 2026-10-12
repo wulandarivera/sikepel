@@ -7,7 +7,7 @@ import {
 } from "./formatters.js";
 import { getAutoReplyStore } from "./auto-replies.js";
 import { findTicketByCode, type MinimalTicketStatus } from "./db.js";
-import { safeWaNotice } from "./wa-notice.js";
+import { safeWaNotice, formatPickupInstructions } from "./wa-notice.js";
 
 const greeted = new Set<string>();
 const seen = new Set<string>();
@@ -49,6 +49,9 @@ export async function processMessageText(
   const isGreeting = /^(halo|hai|hi|hello|ass?alamualaikum|selamat (pagi|siang|sore|malam))[!. ]*$/i.test(trimmed);
   if (isGreeting) return greetingSetting ? (greetingSetting.is_active ? greetingSetting.reply_text : null) : formatBotMenu();
   const lower = trimmed.toLowerCase();
+  if (/pengambilan|ambil surat|surat siap/.test(lower)) {
+    return formatPickupInstructions();
+  }
   if (/status|lacak|tiket/.test(lower)) return "Lacak permohonan: https://mandiri.sikepel.biz.id/lacak. Siapkan nomor tiket dan tanggal lahir pemohon.";
   if (/ajukan|bikin surat|buat surat|daftar surat|link|tautan/.test(lower)) return "Ajukan surat: https://mandiri.sikepel.biz.id. Pilih jenis surat, ikuti persyaratan pada portal, lalu simpan tiket. Surat fisik diambil di loket setelah dinyatakan siap; tidak ada PDF lewat WhatsApp.";
   if (/syarat|persyaratan/.test(lower)) return "Persyaratan mengikuti jenis surat pada portal: https://mandiri.sikepel.biz.id. Pilih layanan untuk melihat daftar dokumen terbaru.";

@@ -79,3 +79,11 @@ QR dihasilkan encoder lokal qrcode-terminal menjadi SVG base64 (tidak ada gambar
 Frontend ownership: host whitelist `/api/login` existing dan `/api/wa/**`, UI `/wa/**`; jangan mengubah redirect login. Backend tidak mengubah proxy/UI. Tidak ada deployment pada task ini.
 
 Verifikasi adapter: `npx tsx --test src/server/wa-dashboard.test.ts` dari root. Verifikasi daemon: `npm test --prefix services/whatsapp-gateway`. Mock socket dan DB test tidak membuktikan pairing WhatsApp live; pairing/kirim live tetap perlu operator berotorisasi.
+
+## Informasi pengambilan resmi
+
+Operator menetapkan `WA_PICKUP_LOCATION`, `WA_PICKUP_HOURS`, dan
+`WA_PICKUP_DOCUMENTS` pada environment gateway, lalu restart proses gateway.
+Nilai kosong tidak diberi default alamat, jam, atau dokumen; bot menyatakan
+konfigurasi belum lengkap. Kata kunci: `pengambilan`, `ambil surat`, `surat siap`.
+Surat tetap fisik; tidak ada pengiriman PDF. Tidak mengaktifkan reminder.

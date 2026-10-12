@@ -111,12 +111,13 @@ async function runTests() {
     const reply = formatTicketStatusReply(record);
     assertNoEmoji(reply, `formatTicketStatusReply untuk status ${item.status}`);
     assert.ok(reply.includes(record.ticket_code), "Harus memuat nomor tiket");
-    assert.ok(reply.includes(record.type_name), "Harus memuat nama jenis surat");
-    assert.ok(reply.includes(item.expectedStatus), `Harus memuat teks status ${item.expectedStatus}`);
+    assert.ok(!reply.includes(record.type_name), "Jenis surat pribadi tidak boleh ditampilkan");
+    assert.ok(!reply.includes(record.resident_name!), "Nama pribadi tidak boleh ditampilkan");
+    assert.ok(reply.includes("Lacak:"), "Status wajib memuat langkah portal");
 
     if (item.status === "APPROVED" || item.status === "COMPLETED") {
       assert.ok(
-        reply.includes("Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas"),
+        reply.includes("surat siap diambil") || reply.includes("Surat fisik diambil di loket"),
         `Status ${item.status} wajib menegaskan surat fisik diambil langsung di loket`,
       );
       assert.ok(
