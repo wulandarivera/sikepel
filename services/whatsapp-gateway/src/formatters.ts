@@ -10,24 +10,11 @@ export interface TicketRecord {
 
 export function formatBotMenu(): string {
   return [
-    "LAYANAN HOTLINE WARGA KELURAHAN CIBODAS (SIKEPEL)",
-    "",
-    "Selamat datang di layanan pesan otomatis Kelurahan Cibodas.",
-    "",
-    "Pilihan Layanan Warga:",
-    "1. Pengajuan Surat Mandiri",
-    "   Akses portal resmi warga: https://mandiri.sikepel.biz.id",
-    "",
-    "2. Cek Status Permohonan",
-    "   Kirimkan nomor tiket permohonan Anda dengan format:",
-    "   TIK-YYYYMM-XXXXXXXX",
-    "   (Contoh: TIK-202610-A1B2C3D4)",
-    "",
-    "3. Informasi Jam Layanan Kantor",
-    "   Kantor Kelurahan Cibodas melayani loket pada hari kerja:",
-    "   Senin - Jumat: Pukul 08.00 - 15.00 WIB",
-    "",
-    "Pemberitahuan: Surat fisik diambil langsung di loket pelayanan Kantor Kelurahan Cibodas.",
+    "Selamat datang di SIKEPEL Kelurahan Cibodas.",
+    "Pengajuan surat: https://mandiri.sikepel.biz.id",
+    "Lacak permohonan: https://mandiri.sikepel.biz.id/lacak (gunakan tiket dan tanggal lahir pemohon).",
+    "Surat fisik diambil di loket setelah dinyatakan siap. WhatsApp tidak mengirim PDF surat.",
+    "Ketik ajukan, status, persyaratan, atau bantuan.",
   ].join("\n");
 }
 

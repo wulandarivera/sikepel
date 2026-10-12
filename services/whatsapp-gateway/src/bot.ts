@@ -8,6 +8,9 @@ import {
 } from "./formatters.js";
 import { getAutoReplyStore } from "./auto-replies.js";
 
+const greeted = new Set<string>();
+const seen = new Set<string>();
+
 const TICKET_REGEX = /\b(TIK-\d{6}-[A-Za-z0-9]{4,16})\b/i;
 
 export function extractMessageText(msg: proto.IWebMessageInfo): string {
@@ -91,7 +94,11 @@ export async function handleIncomingMessage(
     if (!msg.key || msg.key.fromMe) return;
 
     const jid = msg.key.remoteJid;
-    if (!jid) return;
+    if (!jid || !jid.endsWith("@s.whatsapp.net")) return;
+    const receipt = `${jid}:${msg.key.id || ""}`;
+    if (!msg.key.id || seen.has(receipt)) return;
+    seen.add(receipt);
+    if (seen.size > 10000) seen.delete(seen.values().next().value!);
 
     // Abaikan status update atau pesan siaran publik
     if (jid.endsWith("@broadcast") || jid.includes("status@broadcast")) {
@@ -103,9 +110,12 @@ export async function handleIncomingMessage(
 
     const senderName = msg.pushName || "";
     const senderPhone = jid ? jid.replace(/@.*$/, "") : "";
-    const reply = await processMessageText(text, { name: senderName, phone: senderPhone });
+    const greeting = /^(halo|hai|hi|hello|ass?alamualaikum|selamat (pagi|siang|sore|malam))[!. ]*$/i.test(text.trim());
+    if (greeting && greeted.has(jid)) return;
+    const reply = greeting ? formatBotMenu() : await processMessageText(text, { name: senderName, phone: senderPhone });
     if (!reply) return;
 
+    if (greeting) greeted.add(jid);
     const sent = await sock.sendMessage(jid, { text: reply });
     if (sent?.key?.id && sent?.message && onSentMessage) {
       onSentMessage(sent.key.id, sent.message);
