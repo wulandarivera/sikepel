@@ -1,0 +1,10 @@
+SIK24 backend-only proxy candidate
+Base465d855 app0.5.52 gateway1.0.2; patch app0.5.53 gateway unchanged1.0.2.
+QA exact python3 /home/cibodas/apps/sikepel/runtime-preflight/sik24-proxy/sik24-check.py
+Contained bwrap private network/PID/filesystem; dependency mounts read-only. No real auth/socket startup. Proxy test uses transpiled actual createWaDashboard and actual loopback upstream/proxy HTTP; session/audit test ports injected, real database/security imports excluded. Actual createWaDashboard cookie/role/village/origin/validation/rate/audit logic exercised; sameOrigin port stub plus explicit origin enforcement; not real production auth verification.
+Frontend contract task SIK25; backend dependencies followup SIK26. Owner backend src/server/wa-dashboard.ts only; no UI edits.409 safe fixed error/state blocked/action operator_review_required/retryable false only logout exact denial. status optional fields preserve legacy; inconsistent state fails503. Unknown upstream fields dropped, body cap256KiB. No raw upstream error.
+Frontend no auto mutation retry/resend/reset/logout/reconnect when blocked409; display static operator banner; manual read-only status refresh permitted.401 signin/403 denied/503 outage distinct. Older status without fields unchanged.
+Offline read-only cache inventory all9 mismatched locked blobs SHA512 verified; installed dependency tree remains mismatched; no bundle/install claim. Dependency-inventory.json includes exact versions/hashes. SIK26 separate claim before edits.
+No production changes, rollout approval or Waiting fix claim. Source/built SIK23 preservation regression included. Permanent sikepel-qa required, not done.
+
+Final full10 commands exit0 result sik16-check-qc2vcpml/result.json. Extended11/11 result sik16-check-cqktzf45/result.json. Cache summary app135 verified82 missing6 nonsha512; gateway109 verified21 missing1 nonsha512. Missing includes platform-optional packages; no complete bundle assertion.

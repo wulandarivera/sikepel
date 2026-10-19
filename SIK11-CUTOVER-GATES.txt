@@ -1,0 +1,25 @@
+SIK-11 PRE-CUTOVER ONLY; commands below NOT EXECUTED.
+Owner permits only normal source cleanup of expired DRAFT/PREVIEW during authorized recovery. No arbitrary deletion. Fresh backup QA and lead cutover gate required.
+Preparation target: /home/cibodas/apps/sikepel/runtime-preflight/sik04-pm2-json-preparation
+Runtime target: /home/cibodas/apps/sikepel/releases/e968338a106d672f0a7682d456a82567aadd080e (0.5.31)
+
+Read-only checks:
+cd /home/cibodas/apps/sikepel/runtime-preflight/sik04-pm2-json-preparation
+python3 -B sik10-cli-tests.py
+node launcher-tests.cjs
+node release-launcher.cjs --check
+node verify-pm2-config.cjs
+
+AFTER independent backup QA and lead authorization ONLY:
+Re-read sanitized PM2 IDs from dated pm2-sanitized.json; revalidate BOTH name ecosystem.release AND exact exec path ending /releases/e968338a106d672f0a7682d456a82567aadd080e/ecosystem.release.cjs. Do not delete by ambiguous shared name. Abort if metadata differs.
+pm2 delete <confirmed-accidental-pm_id-1> <confirmed-accidental-pm_id-2>
+pm2 start /home/cibodas/apps/sikepel/runtime-preflight/sik04-pm2-json-preparation/ecosystem.private.config.cjs --only sikepel
+This recognized .config.cjs loader prepares secrets in memory; JSON cwd and Next executable are absolute release targets. Never invoke ecosystem.release.cjs directly. Never dump PM2 environment/jlist to terminal.
+Check sanitized sikepel exec is release/node_modules/next/dist/bin/next, cwd release, status online. Check loopback/approved host HTTP login status and authenticated health without logging credentials/payloads. Observe expected normal expiry cleanup only after owner+lead gate.
+Do not touch sikepel-wa-gateway or unrelated PM2 processes. Do not pm2 save until validated and separately instructed.
+
+Rollback:
+If new runtime unhealthy, pm2 stop sikepel (after lead authorization) prevents further periodic cleanup. Preserve artifact and diagnostic evidence privately. Restoring prior process metadata/config can restore prior configuration, NOT a healthy old application: previous accidental processes executed config-as-program. Do not present that as service recovery. No pm2 resurrect of whole dump (would affect unrelated processes).
+DB/schema/deleted drafts cannot be undone by reverting code/config. DB restore requires a separate explicit restore authorization, fresh backup verification, maintenance isolation and reviewed restore commands; no live restore command is authorized here.
+Restricted private-config/root.env and preparation configs retained server-local0600. No automatic root.env overwrite. Storage recovery would likewise require scoped authorization and validation, not blanket tar extraction.
+Live WA gateway is not stopped or reset. A file copy of live WA sessions is not a consistent snapshot; do not use it as proven rollback. Need independent determination whether gateway/session snapshot can be safely excluded from unchanged-gateway cutover or coordinated consistent backup approved separately.

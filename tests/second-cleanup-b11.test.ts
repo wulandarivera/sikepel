@@ -1,0 +1,2 @@
+import test from "node:test";import assert from "node:assert/strict";import {readFileSync} from "node:fs";
+test("mobile navigation declares inert hidden state and keyboard focus management",()=>{const s=readFileSync('src/components/workspace.tsx','utf8');assert.ok(s.includes('inert={mobile && !menu}'));assert.ok(s.includes('aria-expanded={menu}'));assert.ok(s.includes('aria-controls="workspace-navigation"'));assert.ok(s.includes('event.key === "Escape"'));assert.ok(s.includes('event.key === "Tab"'));assert.ok(s.includes('menuButton.current?.focus()'));});

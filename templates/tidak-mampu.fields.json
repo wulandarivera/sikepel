@@ -1,0 +1,8 @@
+[
+  {"key":"negara","label":"Kewarganegaraan","type":"text","required":true},
+  {"key":"nomor_pengantar_rt","label":"Nomor surat pengantar RT/RW","type":"text","required":false},
+  {"key":"tanggal_pengantar_rt","label":"Tanggal surat pengantar RT/RW","type":"date","required":false},
+  {"key":"desil","label":"Kategori desil DTSEN","type":"select","required":true,"options":["Desil 1","Desil 2","Desil 3","Desil 4","Desil 5","Desil 6-10"]},
+  {"key":"keperluan","label":"Peruntukan surat","type":"textarea","required":true},
+  {"key":"catatan","label":"Catatan Untuk Petugas (tidak tercetak)","type":"textarea","required":false}
+]

@@ -1,0 +1,2 @@
+import test from "node:test";import assert from "node:assert/strict";import {readFileSync} from "node:fs";
+test("date time displays explicitly use WIB independent of browser timezone",()=>{for(const file of ['components/service.tsx','components/wa-dashboard.tsx','app/mandiri/lacak/page.tsx','app/mandiri/ajukan/page.tsx']){const s=readFileSync('src/'+file,'utf8');assert.ok(!s.includes('.toLocaleString("id-ID")'),file);assert.ok(!s.includes(".toLocaleString('id-ID')"),file);assert.ok(s.includes('Asia/Jakarta'),file);}});

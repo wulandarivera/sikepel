@@ -1,0 +1,2 @@
+import test from "node:test";import assert from "node:assert/strict";import {NextRequest} from "next/server";import {proxy} from "../src/proxy";
+test("restricted hosts return 404 with same-host home navigation",async()=>{for(const host of ['wa.sikepel.biz.id','mandiri.sikepel.biz.id']){const r=proxy(new NextRequest('https://'+host+'/missing',{headers:{host}}));assert.equal(r.status,404);assert.match(r.headers.get('content-type')||'',/text\/html/);assert.match(await r.text(),/href="\/"/);}});

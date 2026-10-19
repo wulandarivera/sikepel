@@ -1,0 +1,534 @@
+﻿SIKEPEL v1 — Product Requirements Document (PRD)
+Sistem Informasi Pelayanan Kelurahan
+Version 1.0 — Prototype Cloud Multi-Kelurahan
+
+
+1. Ringkasan Produk
+SIKEPEL adalah aplikasi web pelayanan administrasi kelurahan yang menggantikan proses Excel + Microsoft Word Mail Merge dengan alur pelayanan terpusat berbasis database, template DOCX, penomoran terkontrol, dan arsip PDF.
+
+
+SIKEPEL v1 ditujukan sebagai prototype fungsional yang dapat digunakan untuk demonstrasi, evaluasi internal, dan persiapan pilot terbatas di lingkungan kecamatan. Produk dirancang sejak awal sebagai multi-kelurahan: satu aplikasi, satu katalog template surat global, tetapi identitas kelurahan, pejabat, pengguna, data penduduk, penomoran, dan arsip tetap terisolasi per kelurahan.
+
+
+Nilai utama produk adalah mengurangi ketergantungan pada file Word/Excel yang mudah berubah, mencegah ketidaksinkronan nomor dan data, mempercepat pelayanan berulang, serta menyediakan arsip surat yang konsisten dan dapat ditelusuri.
+
+
+2. Pernyataan Masalah
+Proses pelayanan saat ini bergantung pada file Excel sebagai sumber data dan file Word yang terhubung melalui Mail Merge. Ketika file Word, koneksi Mail Merge, field, atau urutan data berubah, hasil surat dapat salah atau tidak sinkron. Penomoran juga rawan duplikasi atau terlewat ketika dikelola manual oleh beberapa pegawai.
+
+
+Masalah tambahan muncul ketika admin utama tidak berada di kantor: pegawai lain tetap harus dapat melayani warga tanpa mengubah template, merusak hubungan data, atau menggunakan salinan file berbeda.
+
+
+Pada skala kecamatan, setiap kelurahan memiliki kop, identitas, pejabat penandatangan, dan nomor surat yang berbeda. Mengelola satu template terpisah untuk setiap kelurahan akan meningkatkan beban pemeliharaan dan risiko inkonsistensi.
+
+
+3. Visi Produk
+Menjadi sistem pelayanan surat kelurahan yang sederhana bagi operator, terkontrol bagi administrator, konsisten bagi pimpinan, dan cukup fleksibel untuk digunakan oleh banyak kelurahan tanpa menggandakan template atau aplikasi.
+
+
+Prinsip visi: satu alur pelayanan, satu sumber template, satu sumber data operasional per tenant, satu arsip yang dapat ditelusuri, dan output resmi berbentuk PDF.
+
+
+4. Tujuan Produk
+G-01 Mengurangi kesalahan akibat Mail Merge, template Word yang berubah, dan pemilihan data manual.
+G-02 Memungkinkan operator membuat surat tanpa membuka atau mengedit template Word asli.
+G-03 Menyediakan penomoran surat yang konsisten, unik, dan dapat diaudit.
+G-04 Menyimpan data penduduk hasil pelayanan agar pelayanan berikutnya lebih cepat tanpa bergantung pada akses Dukcapil.
+G-05 Memungkinkan satu template DOCX per jenis surat digunakan oleh seluruh kelurahan melalui placeholder dinamis.
+G-06 Menghasilkan PDF yang siap dipreview, dicetak, diunduh, dan diarsipkan.
+G-07 Menjaga isi surat lama tetap konsisten walaupun data penduduk, pejabat, atau template berubah.
+G-08 Menyediakan isolasi data antar-kelurahan dan hak akses berbasis peran.
+G-09 Menyediakan prototype cloud yang mudah dipresentasikan namun portable ke server kecamatan di masa depan.
+
+
+5. Sasaran Keberhasilan
+S-01 Operator dapat menyelesaikan pembuatan surat standar tanpa membuka Excel atau Word.
+S-02 Tidak ada dua surat terbit dengan kombinasi nomor resmi yang sama dalam scope penomoran yang sama.
+S-03 Surat yang sudah terbit dapat dicari kembali dan dicetak ulang menggunakan data historis yang sama.
+S-04 Template global dapat menghasilkan kop dan penandatangan berbeda sesuai kelurahan pengguna.
+S-05 Data penduduk yang baru dimasukkan pada pelayanan pertama dapat ditemukan kembali pada pelayanan berikutnya.
+S-06 Operator kelurahan A tidak dapat melihat data penduduk atau arsip kelurahan B.
+S-07 Kegagalan converter PDF tidak menyebabkan nomor ganda atau kehilangan jejak nomor yang sudah dialokasikan.
+S-08 Seluruh fungsi inti dapat dijalankan melalui browser pada desktop/laptop tanpa instalasi aplikasi lokal.
+
+
+6. Non-Goals SIKEPEL v1
+NG-01 Tidak melakukan verifikasi identitas ke Dukcapil/SIAK.
+NG-02 Tidak menyediakan tanda tangan elektronik tersertifikasi atau integrasi BSrE pada v1.
+NG-03 Tidak menyediakan portal pengajuan mandiri masyarakat pada v1.
+NG-04 Tidak menggantikan sistem kependudukan resmi pemerintah.
+NG-05 Tidak menyediakan aplikasi mobile native.
+NG-06 Tidak mencakup antrean, pembayaran, WhatsApp gateway, OCR, atau integrasi lintas sistem kabupaten/kota pada v1.
+NG-07 Tidak menjadikan file DOCX hasil generate sebagai output utama bagi operator; output utama adalah PDF.
+
+
+7. Pengguna dan Persona
+Persona A — Operator Kelurahan
+Tujuan: melayani warga secepat mungkin, mencari data, mengisi form, menerbitkan surat, dan mencetak PDF.
+Kebutuhan utama: UI sederhana, pencarian cepat, sedikit langkah, validasi yang jelas, dan tidak perlu mengerti template.
+
+
+Persona B — Admin Kelurahan
+Tujuan: mengelola identitas kelurahan, pejabat, operator, aturan nomor tertentu, dan memantau arsip kelurahannya.
+Kebutuhan utama: kontrol konfigurasi tanpa mengakses konfigurasi tenant lain.
+
+
+Persona C — Super Admin Kecamatan
+Tujuan: mengelola daftar kelurahan, jenis surat, template global, konfigurasi lintas tenant, dan melihat laporan agregat.
+Kebutuhan utama: satu tempat untuk menjaga konsistensi format antar-kelurahan.
+
+
+Persona D — Pimpinan
+Tujuan: melihat arsip, laporan, dan bila diperlukan melakukan pemeriksaan/approval pada roadmap berikutnya.
+Kebutuhan utama: akses baca yang ringkas dan dapat dipercaya.
+
+
+8. Jobs To Be Done
+JTBD-01 Ketika warga datang meminta surat, operator ingin menemukan atau memasukkan data warga dan menyelesaikan surat tanpa membuka beberapa file.
+JTBD-02 Ketika data warga belum pernah ada, operator ingin menyimpannya sambil tetap melanjutkan pelayanan yang sedang berjalan.
+JTBD-03 Ketika format surat berubah, admin kecamatan ingin memperbarui satu template agar perubahan berlaku untuk semua kelurahan tanpa mengunggah salinan per kelurahan.
+JTBD-04 Ketika pejabat berganti, admin kelurahan ingin mengganti pejabat aktif tanpa mengubah surat lama.
+JTBD-05 Ketika warga meminta cetak ulang, operator ingin menemukan surat lama dan menghasilkan kembali dokumen yang identik secara historis.
+JTBD-06 Ketika beberapa operator menerbitkan surat bersamaan, sistem harus memastikan nomor tidak bertabrakan.
+JTBD-07 Ketika converter PDF gagal, operator ingin retry tanpa menyebabkan surat baru atau nomor baru yang tidak perlu.
+
+
+9. Prinsip Produk
+P-01 Template terkunci dari operator.
+P-02 Tenant ditentukan oleh session, bukan pilihan bebas operator.
+P-03 Nomor resmi hanya diberikan saat penerbitan.
+P-04 Surat terbit bersifat immutable.
+P-05 Snapshot historis lebih penting daripada mengambil data master terbaru saat cetak ulang.
+P-06 Preview dan final harus menggunakan pipeline render yang sama.
+P-07 Data lokal tidak boleh diklaim sebagai data terverifikasi Dukcapil.
+P-08 Error harus menjelaskan tindakan yang dapat dilakukan pengguna.
+P-09 Fitur prototype tidak boleh mengunci aplikasi pada satu vendor infrastruktur.
+P-10 Data dan dokumen tidak boleh dipublikasikan melalui URL permanen terbuka.
+
+
+10. Ruang Lingkup MVP / v1
+Must Have
+M-01 Login dan session.
+M-02 Multi-kelurahan / multi-tenant.
+M-03 Role Super Admin Kecamatan, Admin Kelurahan, Operator, dan Pimpinan/read-only.
+M-04 Master kelurahan dan pejabat.
+M-05 Data penduduk lokal hasil pelayanan.
+M-06 Pencarian penduduk berdasarkan NIK dan nama.
+M-07 Tambah penduduk dari alur pelayanan.
+M-08 Jenis surat dan form dinamis.
+M-09 Template DOCX global dengan ${placeholder}.
+M-10 Validasi placeholder dan template versioning.
+M-11 Draft, preview, terbit, batal/void, dan cetak ulang.
+M-12 Penomoran otomatis atomik.
+M-13 Generate DOCX sementara dan konversi PDF.
+M-14 Penyimpanan PDF final pada private object storage.
+M-15 Arsip dan pencarian surat.
+M-16 Snapshot data historis.
+M-17 Audit log.
+M-18 Dashboard dasar.
+M-19 Manajemen pengguna.
+M-20 Deployment prototype Vercel + Supabase + Gotenberg.
+
+
+Should Have
+SH-01 Import penduduk awal dari Excel/CSV.
+SH-02 Filter arsip berdasarkan tanggal, jenis surat, kelurahan, dan status.
+SH-03 Download laporan operasional sederhana.
+SH-04 Retry converter PDF dari surat berstatus ISSUE_PENDING/GENERATING.
+SH-05 Validasi duplikasi NIK pada tenant yang sama.
+
+
+Could Have
+C-01 QR code verifikasi internal.
+C-02 Approval pimpinan sebelum terbit.
+C-03 Override template per kelurahan bila suatu hari dibutuhkan.
+C-04 Statistik pelayanan yang lebih rinci.
+
+
+Won't Have in v1
+W-01 Integrasi Dukcapil/SIAK.
+W-02 Tanda tangan elektronik tersertifikasi.
+W-03 Portal masyarakat.
+W-04 Aplikasi mobile native.
+
+
+11. Requirement Fungsional — Authentication dan Tenant
+AUTH-01 Pengguna harus login sebelum mengakses modul operasional.
+AUTH-02 Session harus memuat user_id, role, dan village_id/kelurahan_id untuk pengguna tenant.
+AUTH-03 Operator dan Admin Kelurahan tidak boleh memilih atau mengganti tenant saat membuat pelayanan.
+AUTH-04 Super Admin Kecamatan dapat berpindah scope tenant melalui UI administratif yang eksplisit.
+AUTH-05 Pengguna nonaktif tidak dapat login atau melakukan aksi baru.
+AUTH-06 Logout harus mengakhiri session aktif.
+AUTH-07 Halaman dan aksi server harus melakukan authorization; menyembunyikan menu di UI saja tidak dianggap cukup.
+
+
+12. Requirement Fungsional — Kelurahan dan Pejabat
+ORG-01 Super Admin dapat membuat dan mengaktifkan/nonaktifkan kelurahan.
+ORG-02 Identitas kelurahan minimal mencakup nama, kecamatan, kabupaten/kota, alamat, kontak, kode pos, dan aset logo bila diperlukan.
+ORG-03 Admin Kelurahan dapat mengelola pejabat pada tenant-nya.
+ORG-04 Pejabat memiliki nama, NIP bila ada, jabatan, masa berlaku, dan status aktif.
+ORG-05 Hanya pejabat yang sesuai kebijakan surat yang dapat dipilih sebagai penandatangan.
+ORG-06 Surat terbit menyimpan snapshot nama, NIP, dan jabatan penandatangan.
+ORG-07 Pergantian pejabat aktif tidak boleh mengubah cetak ulang surat lama.
+
+
+13. Requirement Fungsional — Data Penduduk
+RES-01 Operator dapat mencari penduduk berdasarkan NIK exact/partial dan nama partial.
+RES-02 Jika data tidak ditemukan, operator dapat memilih Tambah Penduduk & Lanjutkan Pelayanan tanpa keluar dari alur surat.
+RES-03 NIK yang diinput harus divalidasi 16 digit jika field tersebut digunakan.
+RES-04 Validasi format NIK tidak boleh ditampilkan sebagai verifikasi Dukcapil.
+RES-05 Data penduduk minimal mendukung nama, NIK, No. KK, tempat/tanggal lahir, jenis kelamin, agama, status perkawinan, pekerjaan, alamat, RT, dan RW sesuai kebutuhan surat.
+RES-06 Data baru langsung dapat digunakan pada pelayanan yang sedang aktif setelah tersimpan.
+RES-07 Operator dapat memperbarui master data penduduk sesuai hak akses.
+RES-08 Perubahan master penduduk tidak boleh mengubah snapshot surat yang sudah terbit.
+RES-09 Aplikasi harus mencegah atau memperingatkan duplikasi NIK pada tenant yang sama.
+RES-10 Data penduduk tenant lain tidak boleh terlihat dalam hasil pencarian operator.
+
+
+14. Requirement Fungsional — Jenis Surat dan Form Dinamis
+FORM-01 Setiap jenis surat memiliki definisi field khusus.
+FORM-02 Field dapat memiliki tipe teks, textarea, angka, tanggal, pilihan, boolean, atau tipe lain yang disetujui.
+FORM-03 Field dapat ditandai wajib atau opsional.
+FORM-04 Field dapat memiliki default value atau nilai turunan.
+FORM-05 Form hanya menampilkan field yang relevan untuk jenis surat tersebut.
+FORM-06 Data master penduduk mengisi otomatis field umum yang tersedia.
+FORM-07 Validasi form dilakukan sebelum preview dan diulang kembali sebelum penerbitan.
+FORM-08 Perubahan konfigurasi form tidak boleh mengubah data surat terbit lama.
+
+
+15. Requirement Fungsional — Template Global
+TPL-01 Template utama menggunakan format DOCX.
+TPL-02 Delimiter placeholder adalah ${placeholder}.
+TPL-03 Satu template aktif per jenis surat digunakan sebagai default untuk seluruh kelurahan.
+TPL-04 Kop surat, identitas kelurahan, dan pejabat harus berasal dari placeholder dinamis sehingga satu template dapat menghasilkan dokumen berbeda per kelurahan.
+TPL-05 Upload template baru membuat versi baru, tidak menimpa versi lama.
+TPL-06 Template lama yang sudah direferensikan surat terbit tidak boleh dihapus secara destruktif.
+TPL-07 Validator template harus mendeteksi placeholder yang tidak dikenal.
+TPL-08 Template yang memiliki placeholder wajib tidak valid tidak dapat diaktifkan.
+TPL-09 Placeholder harus didukung pada body, tabel, header, dan footer sejauh engine DOCX mendukung.
+TPL-10 Operator tidak memiliki hak upload, edit, aktivasi, atau penghapusan template.
+TPL-11 Surat terbit menyimpan template_version_id yang digunakan.
+
+
+16. Requirement Fungsional — Workflow Pelayanan Surat
+LET-01 Operator memilih jenis surat lalu mencari atau membuat data penduduk.
+LET-02 Operator mengisi field khusus surat dan dapat menyimpan draft.
+LET-03 Sistem dapat menghasilkan preview sebelum nomor resmi dikunci.
+LET-04 Preview harus dibedakan dari dokumen final melalui status/indikator draft di UI atau watermark draft internal bila diterapkan.
+LET-05 Saat operator menekan Terbitkan, server melakukan validasi ulang terhadap data, permission, template aktif, penandatangan, dan konfigurasi nomor.
+LET-06 Setelah validasi sukses, sistem mengalokasikan nomor secara atomik.
+LET-07 Sistem membuat snapshot data penduduk, kelurahan, pejabat, field surat, template version, dan metadata lain yang diperlukan.
+LET-08 Sistem merender DOCX final, mengonversi menjadi PDF, menyimpan PDF, lalu menandai surat ISSUED.
+LET-09 Surat ISSUED tidak dapat diedit in-place.
+LET-10 Pembatalan atau koreksi substansial harus menghasilkan jejak status/record baru sesuai kebijakan.
+LET-11 Cetak ulang menggunakan snapshot dan template version yang direkam ketika surat diterbitkan.
+LET-12 Operator dapat membuka, mengunduh, dan mencetak PDF final sesuai permission.
+
+
+17. Requirement Fungsional — Penomoran Surat
+NUM-01 Sequence dihitung di server/database, bukan frontend.
+NUM-02 Default scope counter adalah village_id + letter_type_id + year.
+NUM-03 Dua penerbitan bersamaan dalam scope yang sama harus menghasilkan sequence berbeda.
+NUM-04 Format nomor dapat menggunakan kode surat, sequence padded, kode kelurahan, bulan Romawi, dan tahun.
+NUM-05 Nomor tidak dialokasikan saat user hanya membuka form.
+NUM-06 Setelah nomor dialokasikan, kegagalan render/PDF tidak boleh menyebabkan sistem otomatis mengambil nomor baru tanpa jejak.
+NUM-07 Surat yang gagal selesai setelah nomor dialokasikan menggunakan status seperti ISSUE_PENDING/GENERATING dan dapat di-retry secara idempotent.
+NUM-08 Jika nomor harus dibatalkan permanen, status VOID/CANCELLED harus tercatat dan nomor tidak digunakan ulang secara diam-diam.
+NUM-09 Perubahan manual counter hanya tersedia untuk role khusus dan wajib alasan audit.
+
+
+18. Requirement Fungsional — PDF dan Arsip
+PDF-01 Output resmi operator adalah PDF.
+PDF-02 DOCX hasil merge bersifat sementara kecuali ada kebutuhan arsip teknis khusus.
+PDF-03 Preview dan final harus menggunakan renderer/converter yang sama.
+PDF-04 File final disimpan di private object storage.
+PDF-05 Akses PDF harus melalui backend authorization atau signed URL berumur pendek.
+PDF-06 Arsip dapat dicari minimal berdasarkan nomor surat, nama, NIK, jenis surat, tanggal, dan status.
+PDF-07 Hasil pencarian arsip harus terfilter tenant kecuali untuk Super Admin scope lintas tenant.
+PDF-08 Detail arsip menampilkan metadata surat, pembuat, status, waktu terbit, penandatangan, dan tindakan yang tersedia.
+PDF-09 Cetak ulang tidak membuat nomor baru.
+PDF-10 Retry converter tidak membuat letter record baru jika masih merupakan proses yang sama.
+
+
+19. Requirement Fungsional — Audit Log
+AUD-01 Aksi penting harus dicatat: login, create/update penduduk, create draft, preview, issue, retry issue, void/cancel, cetak ulang, perubahan pejabat, perubahan pengguna, perubahan konfigurasi nomor, dan perubahan template.
+AUD-02 Audit log menyimpan actor, tenant, aksi, target, waktu, dan detail relevan.
+AUD-03 Audit log tidak dapat diedit oleh operator.
+AUD-04 Super Admin dapat melihat audit lintas tenant sesuai hak akses.
+AUD-05 Admin Kelurahan hanya dapat melihat audit tenant-nya kecuali kebijakan lain ditetapkan.
+
+
+20. Requirement Fungsional — Dashboard dan Laporan
+DASH-01 Dashboard operator menampilkan shortcut Buat Pelayanan, surat terbaru, dan ringkasan aktivitas tenant.
+DASH-02 Admin Kelurahan dapat melihat jumlah surat hari ini/bulan ini dan aktivitas terbaru.
+DASH-03 Super Admin dapat melihat agregasi per kelurahan tanpa membuka data sensitif lebih detail dari yang dibutuhkan.
+DASH-04 Laporan v1 bersifat operasional sederhana, bukan BI penuh.
+DASH-05 Pengukuran produk tidak boleh mengumpulkan data pribadi yang tidak diperlukan hanya untuk analytics.
+
+
+21. Alur Utama Pengguna
+Flow A — Penduduk sudah ada
+Login → Buat Pelayanan → Pilih Jenis Surat → Cari NIK/Nama → Pilih Penduduk → Isi Data Khusus → Preview → Terbitkan → PDF Final → Print/Download.
+
+
+Flow B — Penduduk belum ada
+Login → Buat Pelayanan → Pilih Jenis Surat → Cari NIK/Nama → Tidak Ditemukan → Tambah Penduduk & Lanjutkan → Simpan → Isi Data Khusus → Preview → Terbitkan → PDF Final.
+
+
+Flow C — Cetak ulang
+Arsip → Cari NIK/Nama/Nomor → Buka Surat → Lihat Snapshot → Buka PDF → Print/Download tanpa nomor baru.
+
+
+Flow D — Update template global
+Super Admin → Jenis Surat → Template → Upload DOCX → Validasi Placeholder → Simpan sebagai Versi Baru → Aktivasi → Pelayanan berikutnya menggunakan versi baru; surat lama tetap mereferensikan versi sebelumnya.
+
+
+Flow E — PDF gagal
+Terbitkan → Nomor dialokasikan → Render/convert gagal → Status ISSUE_PENDING → Operator melihat error yang aman → Retry → sukses → ISSUED tanpa nomor baru.
+
+
+22. Requirement UX
+UX-01 Operator harus dapat memulai pelayanan dari dashboard maksimal satu aksi utama.
+UX-02 Form harus menggunakan label Bahasa Indonesia yang jelas dan tidak memaparkan istilah teknis seperti tenant_id atau template_version_id.
+UX-03 Data yang berasal dari master penduduk harus terlihat sebagai nilai terisi otomatis namun tetap dapat diperiksa sebelum terbit.
+UX-04 Field wajib yang kosong harus ditunjukkan di lokasi field dan pada ringkasan error.
+UX-05 Tombol Terbitkan harus dibedakan secara visual dari Simpan Draft dan Preview.
+UX-06 Aksi Terbitkan harus memiliki konfirmasi singkat karena akan mengalokasikan nomor resmi.
+UX-07 UI harus menampilkan status proses: Draft, Generating/Issue Pending, Issued, Void/Cancelled.
+UX-08 Saat proses PDF membutuhkan waktu, user harus melihat progress/status tanpa menekan tombol berkali-kali.
+UX-09 Retry harus aman dari double-click atau refresh.
+UX-10 Tampilan minimum harus nyaman pada laptop kantor; mobile responsiveness tetap didukung tetapi desktop menjadi prioritas v1.
+UX-11 Pencarian penduduk harus menampilkan kandidat yang cukup jelas untuk menghindari salah pilih.
+UX-12 Aksi berisiko seperti perubahan counter, deaktivasi user, dan aktivasi template harus meminta konfirmasi.
+
+
+23. Role dan Permission Produk
+Super Admin Kecamatan
+Dapat mengelola kelurahan, jenis surat, template global, konfigurasi global, user tertentu, dan laporan lintas tenant.
+
+
+Admin Kelurahan
+Dapat mengelola identitas kelurahan, pejabat, pengguna tenant, data penduduk, arsip, dan konfigurasi lokal yang diizinkan.
+
+
+Operator
+Dapat mencari/menambah/memperbarui penduduk sesuai kebijakan, membuat draft, preview, menerbitkan, mencari arsip, dan cetak ulang.
+
+
+Pimpinan
+Default v1 bersifat read-only untuk arsip/laporan; approval belum menjadi requirement wajib v1.
+
+
+Prinsip permission: deny by default, least privilege, dan semua aksi sensitif divalidasi di server.
+
+
+24. Requirement Data, Privasi, dan Keamanan
+SEC-01 Seluruh record sensitif tenant memiliki village_id atau relasi tenant yang dapat ditegakkan.
+SEC-02 Query tenant menggunakan village_id dari session, bukan nilai bebas dari browser.
+SEC-03 Supabase RLS digunakan sebagai lapisan tambahan terhadap authorization aplikasi.
+SEC-04 Storage template dan PDF bersifat private.
+SEC-05 Credential dan service key hanya berada di environment variable server.
+SEC-06 Service role key tidak boleh dikirim ke browser.
+SEC-07 Service PDF converter untuk pilot/production harus dilindungi autentikasi dan tidak menjadi endpoint publik bebas.
+SEC-08 Data penduduk lokal tidak boleh diberi label terverifikasi Dukcapil jika tidak ada integrasi resmi.
+SEC-09 Prototype harus dapat berjalan tanpa watermark DATA DEMONSTRASI; status prototype/pilot adalah status lingkungan dan tata kelola, bukan isi surat.
+SEC-10 Penggunaan data warga nyata harus mengikuti persetujuan dan kebijakan instansi yang berwenang.
+SEC-11 Audit log dan error log tidak boleh menyalin data pribadi berlebihan.
+SEC-12 Signed URL PDF harus memiliki masa berlaku terbatas.
+
+
+25. Requirement Non-Fungsional
+NFR-01 Aplikasi berjalan melalui browser modern tanpa instalasi lokal.
+NFR-02 UI utama menargetkan respons interaksi biasa yang terasa cepat pada koneksi kantor yang wajar.
+NFR-03 Pencarian penduduk dan arsip harus menggunakan indeks/query yang tetap responsif pada pertumbuhan data pilot.
+NFR-04 Aksi penerbitan bersifat idempotent terhadap retry dan double submit.
+NFR-05 Sistem harus memiliki batas ukuran file template dan dokumen.
+NFR-06 Error eksternal seperti storage/converter harus ditangani dengan status yang dapat dipulihkan.
+NFR-07 Arsitektur database, storage, auth, dan converter menggunakan adapter/abstraction yang memungkinkan migrasi provider.
+NFR-08 Deployment prototype menggunakan Vercel untuk aplikasi, Supabase untuk PostgreSQL/Auth/Storage, dan Gotenberg pada service container terpisah.
+NFR-09 Backup database dan file harus dapat dilakukan dan diuji sebelum pilot diperluas.
+NFR-10 Semua waktu audit disimpan konsisten dan ditampilkan sesuai zona waktu operasional.
+NFR-11 Aplikasi harus mempertahankan integritas surat terbit walaupun template, master penduduk, atau pejabat berubah.
+
+
+26. Product Metrics
+MTR-01 Median waktu dari memilih jenis surat hingga PDF final.
+MTR-02 Persentase pelayanan yang selesai tanpa membuka Word/Excel eksternal.
+MTR-03 Jumlah konflik/duplikasi nomor surat; target v1 adalah nol.
+MTR-04 Persentase penduduk yang dapat ditemukan kembali pada kunjungan berikutnya.
+MTR-05 Persentase kegagalan generate/convert PDF.
+MTR-06 Persentase kegagalan yang berhasil dipulihkan melalui retry tanpa nomor baru.
+MTR-07 Jumlah cetak ulang dari arsip.
+MTR-08 Jumlah kesalahan template yang terdeteksi sebelum aktivasi.
+MTR-09 Jumlah insiden akses lintas tenant; target adalah nol.
+MTR-10 Umpan balik operator terkait kemudahan penggunaan setelah uji coba.
+
+
+27. Acceptance Criteria Tingkat Produk
+AC-01 Operator Kelurahan A membuat Surat Domisili dan kop/pejabat yang muncul adalah milik Kelurahan A menggunakan template global yang sama dengan Kelurahan B.
+AC-02 Dua operator menerbitkan jenis surat yang sama secara hampir bersamaan dan menerima nomor berbeda.
+AC-03 Data penduduk yang tidak ditemukan dapat dibuat dari flow surat dan kemudian langsung dipakai.
+AC-04 Setelah pekerjaan penduduk diubah, cetak ulang surat lama masih menampilkan pekerjaan lama dari snapshot.
+AC-05 Setelah pejabat aktif diganti, surat lama tetap menampilkan pejabat lama.
+AC-06 Setelah template v2 diaktifkan, surat baru menggunakan v2 sedangkan surat lama tetap dapat dicetak berdasarkan referensi historis.
+AC-07 Operator Kelurahan A mencoba mengakses URL/detail penduduk Kelurahan B dan ditolak.
+AC-08 Converter gagal setelah nomor dialokasikan; retry berhasil menggunakan nomor yang sama.
+AC-09 PDF final dapat diakses hanya setelah authorization.
+AC-10 Operator tidak memiliki akses ke upload template atau perubahan nomor manual.
+AC-11 Surat ISSUED tidak dapat diedit langsung.
+AC-12 Arsip dapat ditemukan melalui NIK, nama, nomor, jenis, atau tanggal sesuai filter.
+
+
+28. UAT / Skenario Uji Penerimaan
+UAT-01 Login operator valid dan invalid.
+UAT-02 Pencarian penduduk ditemukan dan tidak ditemukan.
+UAT-03 Tambah penduduk dari flow surat.
+UAT-04 Validasi NIK dan field wajib.
+UAT-05 Preview surat tanpa mengunci nomor.
+UAT-06 Terbitkan surat dan cek nomor.
+UAT-07 Simulasi dua penerbitan bersamaan.
+UAT-08 Simulasi converter gagal lalu retry.
+UAT-09 Cetak ulang setelah data penduduk berubah.
+UAT-10 Cetak ulang setelah pejabat berubah.
+UAT-11 Aktivasi template versi baru.
+UAT-12 Validasi placeholder tidak dikenal.
+UAT-13 Uji isolasi tenant melalui UI dan direct URL.
+UAT-14 Uji role operator terhadap halaman admin.
+UAT-15 Uji download PDF dan signed URL kedaluwarsa.
+UAT-16 Uji void/cancel dengan alasan.
+UAT-17 Uji audit log untuk aksi utama.
+UAT-18 Uji import Excel/CSV jika fitur diaktifkan.
+
+
+29. Risiko Produk dan Mitigasi
+RISK-01 Layout DOCX berbeda saat dikonversi LibreOffice.
+Mitigasi: standardisasi font, template guideline, QA per template, dan preview menggunakan pipeline yang sama.
+
+
+RISK-02 Infrastruktur free tier sleep/limit.
+Mitigasi: gunakan prototype workload kecil, pantau quota, dan siapkan opsi upgrade atau migrasi.
+
+
+RISK-03 Data lintas tenant bocor akibat query salah.
+Mitigasi: server authorization + RLS + integration test tenant isolation.
+
+
+RISK-04 Nomor surat ganda akibat concurrency.
+Mitigasi: database transaction/atomic counter + unique constraint + idempotency.
+
+
+RISK-05 Template rusak atau placeholder typo.
+Mitigasi: validator sebelum aktivasi + versioning + rollback ke versi aktif sebelumnya.
+
+
+RISK-06 Data penduduk lokal dianggap sebagai data Dukcapil.
+Mitigasi: label dan dokumentasi yang jelas bahwa sumber adalah input pelayanan lokal.
+
+
+RISK-07 Penggunaan data riil sebelum tata kelola disetujui.
+Mitigasi: pisahkan readiness teknis dari otorisasi operasional dan mengikuti keputusan instansi.
+
+
+RISK-08 Ketergantungan vendor cloud.
+Mitigasi: PostgreSQL standar dan adapter untuk storage/auth/converter.
+
+
+30. Asumsi dan Dependensi
+ASM-01 Kecamatan memiliki lebih dari satu kelurahan yang dapat menggunakan format surat seragam dengan data kop/pejabat dinamis.
+ASM-02 Setiap kelurahan memiliki identitas user yang dapat dipetakan ke tenant.
+ASM-03 Template DOCX akan disediakan dan disesuaikan menggunakan placeholder standar.
+ASM-04 Aturan nomor surat final dapat berbeda antar jenis atau kelurahan dan akan dikonfigurasi.
+DEP-01 Vercel untuk deployment web prototype.
+DEP-02 Supabase untuk PostgreSQL, Auth, dan Storage prototype.
+DEP-03 Gotenberg + LibreOffice pada Cloud Run atau provider container yang dipilih untuk konversi.
+DEP-04 Docxtemplater atau engine setara untuk merge placeholder DOCX.
+DEP-05 Browser dan koneksi internet kantor untuk fase prototype cloud.
+
+
+31. Strategi Rollout
+Tahap 1 — Development
+Implementasi fitur inti, data test, unit/integration test, dan template awal.
+
+
+Tahap 2 — Prototype
+Aplikasi online dengan fitur sebenarnya, tanpa watermark DATA DEMONSTRASI, tetapi penggunaan operasional masih dibatasi sesuai keputusan proyek.
+
+
+Tahap 3 — Pilot Terbatas
+Satu atau beberapa kelurahan menggunakan sistem dalam skenario pelayanan yang telah disetujui, dengan monitoring error, backup, dan feedback operator.
+
+
+Tahap 4 — Evaluasi Kecamatan
+Presentasi hasil pilot, metrik, kebutuhan kebijakan, keamanan, infrastruktur, dan rencana migrasi.
+
+
+Tahap 5 — Production
+Migrasi/peningkatan infrastruktur sesuai kebijakan kecamatan atau pemerintah daerah tanpa merombak domain logic utama.
+
+
+32. Roadmap Setelah v1
+V1.1
+Penyempurnaan laporan, import data, bulk operation aman, template tooling, dan UX berdasarkan feedback operator.
+
+
+V1.2
+Approval pimpinan opsional, QR verification internal, dashboard kecamatan yang lebih kaya.
+
+
+V2
+Integrasi tanda tangan elektronik/BSrE bila memperoleh dukungan resmi, portal pengajuan masyarakat, notifikasi, dan integrasi sistem lain bila tersedia.
+
+
+33. Definition of Done v1
+SIKEPEL v1 dianggap selesai untuk prototype apabila seluruh Must Have telah terimplementasi atau memiliki keputusan eksplisit jika ditunda, acceptance criteria inti lulus, isolasi tenant telah diuji, concurrency nomor telah diuji, pipeline DOCX→PDF stabil untuk template contoh, arsip/cetak ulang menggunakan snapshot, audit log bekerja, dan aplikasi telah terdeploy pada environment prototype yang dapat didemonstrasikan.
+
+
+Dokumentasi minimum yang menyertai v1: PRD, Technical & Functional Specification, konfigurasi environment, panduan template placeholder, panduan deployment, dan user guide operator/admin.
+
+
+34. Keputusan Terbuka / TBD
+TBD-01 Daftar lengkap kelurahan dalam kecamatan.
+TBD-02 Daftar lengkap jenis surat untuk MVP.
+TBD-03 Format nomor resmi per jenis surat/kelurahan.
+TBD-04 Field final setiap jenis surat.
+TBD-05 Siapa yang berwenang melakukan void/cancel dan perubahan counter.
+TBD-06 Apakah Pimpinan membutuhkan approval pada v1 atau hanya read-only.
+TBD-07 Kebijakan retensi PDF dan backup.
+TBD-08 Provider final Gotenberg untuk prototype bila Cloud Run tidak digunakan.
+TBD-09 Kebijakan penggunaan data riil pada fase pilot.
+TBD-10 Domain resmi bila prototype dipresentasikan secara luas.
+
+
+Lampiran A — Prioritas Backlog v1
+P0 — Harus selesai sebelum demo inti
+Authentication, tenant isolation, penduduk, jenis surat/form, template global, placeholder, penomoran, preview, issue, DOCX→PDF, arsip, snapshot, role dasar.
+
+
+P1 — Harus selesai sebelum pilot terbatas
+Audit log lengkap, retry/idempotency, private storage/signed URL, manajemen pejabat, user management, backup, error states, test tenant isolation.
+
+
+P2 — Dapat menyusul setelah demo
+Import Excel/CSV, laporan sederhana, polish dashboard, export laporan.
+
+
+Lampiran B — Ringkasan State Surat
+DRAFT
+Data dapat diedit. Nomor resmi belum dikunci.
+
+
+PREVIEW
+Representasi sementara untuk pemeriksaan. Bukan surat resmi.
+
+
+ISSUE_PENDING / GENERATING
+Nomor sudah dialokasikan dan sistem sedang membuat dokumen final atau menunggu retry.
+
+
+ISSUED
+Surat final berhasil dibuat dan diarsipkan. Data tidak diedit in-place.
+
+
+VOID / CANCELLED
+Surat/nomor dibatalkan dengan alasan dan tetap meninggalkan jejak audit.
