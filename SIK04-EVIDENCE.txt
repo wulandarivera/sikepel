@@ -1,0 +1,4 @@
+PASS PM2 JSON parser, single Next target, immutable release, build, package versions, secret-free config
+No PM2 connect/start/restart or Next startup invoked
+Backup gzip -t and pg_restore --list PASS; CUSTOM v1.16, PostgreSQL18.6, 91 TOC entries, 16 TABLE and 16 TABLE DATA entries. Full restore not tested. SHA256 abfa9ddffd7e856178a741c70a7006d3214b6763da7fb72f2c5e8c1e7460c4f8.
+Startup migrates draft tickets and mandiri, deletes expired DRAFT/PREVIEW letters, starts 300000ms cleanup. No production start permitted before QA.

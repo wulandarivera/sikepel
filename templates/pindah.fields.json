@@ -1,0 +1,131 @@
+[
+  {
+    "key": "alamat_pindah",
+    "label": "Alamat tujuan pindah",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "rt_pindah",
+    "label": "RT tujuan",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "rw_pindah",
+    "label": "RW tujuan",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "kel_pindah",
+    "label": "Desa/kelurahan tujuan",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "kec_pindah",
+    "label": "Kecamatan tujuan",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "kota_pindah",
+    "label": "Kabupaten/kota tujuan",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "provinsi_pindah",
+    "label": "Provinsi tujuan",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "pos_pindah",
+    "label": "Kode pos tujuan",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "no_klasifikasi_pindah",
+    "label": "Klasifikasi kepindahan",
+    "type": "select",
+    "required": true,
+    "options": [
+      "1. Dalam satu desa/kelurahan",
+      "2. Antar desa/kelurahan dalam satu kecamatan",
+      "3. Antar kecamatan dalam satu kabupaten/kota",
+      "4. Antar kabupaten/kota dalam satu provinsi",
+      "5. Antar provinsi"
+    ]
+  },
+  {
+    "key": "no_alasan_pindah",
+    "label": "Alasan pindah",
+    "type": "select",
+    "required": true,
+    "options": [
+      "1. Pekerjaan",
+      "2. Pendidikan",
+      "3. Keamanan",
+      "4. Kesehatan",
+      "5. Perumahan",
+      "6. Keluarga",
+      "7. Lainnya"
+    ]
+  },
+  {
+    "key": "no_jenis_pindah",
+    "label": "Jenis kepindahan",
+    "type": "select",
+    "required": true,
+    "options": [
+      "1. Kepala Keluarga",
+      "2. Kepala Keluarga dan Seluruh Anggota Keluarga",
+      "3. Kepala Keluarga dan Sebagian Anggota Keluarga",
+      "4. Anggota Keluarga"
+    ]
+  },
+  {
+    "key": "no_anggota_pindah",
+    "label": "Status KK anggota yang tidak pindah",
+    "type": "select",
+    "required": true,
+    "options": [
+      "1. Numpang KK",
+      "2. Membuat KK Baru",
+      "3. Nomor KK Tetap",
+      "4. Tidak Ada Keluarga yang Ditinggal"
+    ]
+  },
+  {
+    "key": "no_keluarga_pindah",
+    "label": "Status KK anggota yang pindah",
+    "type": "select",
+    "required": true,
+    "options": [
+      "1. Numpang KK",
+      "2. Membuat KK Baru",
+      "3. Nomor KK Tetap"
+    ]
+  },
+  {
+    "key": "nomor_handphone",
+    "label": "Nomor HP pemohon",
+    "type": "text",
+    "required": false
+  },
+  {
+    "key": "email",
+    "label": "Email pemohon",
+    "type": "text",
+    "required": false
+  },
+  {
+    "key": "catatan",
+    "label": "Catatan Untuk Petugas (tidak tercetak)",
+    "type": "textarea",
+    "required": false
+  }
+]

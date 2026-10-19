@@ -1,0 +1,19 @@
+{
+  "apps": [
+    {
+      "name": "sikepel",
+      "cwd": "/home/cibodas/apps/sikepel/releases/e968338a106d672f0a7682d456a82567aadd080e",
+      "script": "node_modules/next/dist/bin/next",
+      "args": "start --hostname 100.67.16.86 --port 3000",
+      "exec_mode": "fork",
+      "instances": 1,
+      "env": {
+        "NODE_ENV": "production",
+        "SIKEPEL_DATA_DIR": "/home/cibodas/apps/sikepel/.data",
+        "LIBREOFFICE_PATH": "/home/cibodas/apps/sikepel/.tools/linux-lo/usr/lib/libreoffice/program/soffice",
+        "LD_LIBRARY_PATH": "/home/cibodas/apps/sikepel/.tools/linux-lo/usr/lib/libreoffice/program:/home/cibodas/apps/sikepel/.tools/linux-lo/usr/lib/x86_64-linux-gnu",
+        "LIBLANGTAG_DATA": "/home/cibodas/apps/sikepel/.tools/linux-lo/usr/share/liblangtag"
+      }
+    }
+  ]
+}

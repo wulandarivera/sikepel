@@ -1,0 +1,7 @@
+[
+  {"key":"negara","label":"Kewarganegaraan","type":"text","required":true},
+  {"key":"nomor_pengantar_rt","label":"Nomor surat pengantar RT/RW","type":"text","required":false},
+  {"key":"tanggal_pengantar_rt","label":"Tanggal surat pengantar RT/RW","type":"date","required":false},
+  {"key":"keperluan","label":"Peruntukan surat","type":"textarea","required":true},
+  {"key":"catatan","label":"Catatan Untuk Petugas (tidak tercetak)","type":"textarea","required":false}
+]

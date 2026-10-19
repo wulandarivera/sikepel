@@ -1,0 +1,12 @@
+import fs from 'node:fs/promises';
+const base='http://127.0.0.1:3000';
+const password=(await fs.readFile('.data/AKSES-LOKAL.txt','utf8')).match(/Kata sandi semua akun contoh: (.+)/)[1];
+const r=await fetch(base+'/api/login',{method:'POST',headers:{origin:base,'content-type':'application/json'},body:JSON.stringify({username:'admin',password})});
+if(!r.ok)throw new Error('Login admin lokal gagal');
+const cookie=r.headers.get('set-cookie').split(';')[0];
+const boot=await(await fetch(base+'/api/bootstrap',{headers:{cookie}})).json();
+const type=boot.types.find(t=>t.slug==='belum-memiliki-rumah');
+await fs.mkdir('.data/template-rumah',{recursive:true});
+await fs.writeFile('.data/template-rumah/before.json',JSON.stringify({type,villages:boot.villages},null,2));
+console.log(JSON.stringify({type,villages:boot.villages},null,2));
+await fetch(base+'/api/logout',{method:'POST',headers:{cookie,origin:base}});

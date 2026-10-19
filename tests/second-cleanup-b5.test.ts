@@ -1,0 +1,2 @@
+import test from "node:test"; import assert from "node:assert/strict"; import React from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {WaLogin} from "../src/components/wa-login";
+test("WA login explains account scope without gateway jargon",()=>{const html=renderToStaticMarkup(React.createElement(WaLogin));assert.ok(!html.includes("gateway"));assert.ok(html.includes("akun SIKEPEL kelurahan Anda"));});

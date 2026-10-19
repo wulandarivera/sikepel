@@ -1,0 +1,1064 @@
+
+
+
+SIKEPEL
+Sistem Informasi Pelayanan Kelurahan
+Technical & Functional Specification — Version 1.0
+
+Prototype Cloud Multi-Kelurahan
+Target deployment: Vercel + Supabase + Gotenberg on Cloud Run
+Kontrol Dokumen
+Daftar Isi
+1. Ringkasan Eksekutif
+2. Latar Belakang dan Tujuan
+3. Ruang Lingkup SIKEPEL v1
+4. Prinsip Desain
+5. Aktor, Organisasi, dan Hak Akses
+6. Arsitektur Multi-Kelurahan
+7. Modul dan Requirement Fungsional
+8. Workflow Pelayanan Surat
+9. Lifecycle Surat
+10. Sistem Template DOCX dan Placeholder
+11. Penomoran Surat
+12. Data Penduduk Lokal Hasil Pelayanan
+13. Model Data dan ERD Konseptual
+14. Arsitektur Aplikasi dan Service Layer
+15. Pipeline DOCX ke PDF
+16. Penyimpanan File dan Arsip
+17. Keamanan, Privasi, dan Isolasi Data
+18. Audit Log dan Observabilitas
+19. Infrastruktur Prototype dan Deployment
+20. Backup, Restore, dan Portabilitas
+21. Requirement Non-Fungsional
+22. Validasi, Error Handling, dan UX
+23. Acceptance Criteria SIKEPEL v1
+24. Skenario Pengujian
+25. Roadmap Pengembangan
+26. Keputusan Terbuka / TBD
+Lampiran A. Kamus Placeholder Awal
+Lampiran B. Permission Matrix
+Lampiran C. Struktur Database Awal
+Lampiran D. Struktur Environment Variable
+1. Ringkasan Eksekutif
+SIKEPEL adalah aplikasi web pelayanan administrasi kelurahan yang menggantikan alur kerja Excel + Microsoft Word Mail Merge dengan sistem terpusat berbasis database, template DOCX, penomoran terkontrol, dan arsip PDF. SIKEPEL v1 dirancang sejak awal untuk digunakan oleh banyak kelurahan dalam satu wilayah kecamatan melalui satu aplikasi dan satu katalog template surat global.
+Tujuan utama v1 adalah menghasilkan prototype yang benar-benar berfungsi dan dapat dipresentasikan kepada pihak kecamatan, dengan arsitektur yang cukup aman untuk pilot terbatas setelah memperoleh otorisasi penggunaan data. Prototype tidak menggunakan watermark “DATA DEMONSTRASI” pada surat; pemisahan antara development, prototype, pilot, dan production dilakukan melalui environment dan kebijakan operasional, bukan melalui perubahan format surat.
+Satu template DOCX per jenis surat dapat digunakan semua kelurahan melalui placeholder dinamis untuk kop, identitas kelurahan, pejabat, dan data surat.
+Penduduk tidak berasal dari Dukcapil. Jika NIK belum tersimpan, operator menginput data dan sistem menyimpannya sebagai data lokal hasil pelayanan untuk penggunaan berikutnya.
+Output resmi adalah PDF. DOCX hasil merge bersifat sementara dan dikonversi melalui Gotenberg + LibreOffice.
+Nomor surat diberikan secara atomik pada saat penerbitan, bukan ketika form dibuka, sehingga mengurangi duplikasi dan nomor terbuang.
+Setiap surat menyimpan snapshot data penduduk, organisasi, pejabat, template, dan nilai form pada saat diterbitkan sehingga cetak ulang tetap konsisten secara historis.
+Arsitektur memakai abstraction layer untuk database, storage, authentication, dan PDF converter agar mudah dipindahkan dari cloud prototype ke server kecamatan.
+2. Latar Belakang dan Tujuan
+2.1 Latar belakang
+Proses pelayanan saat ini mengandalkan input data melalui Excel dan Mail Merge ke Word. Masalah utama muncul ketika file Word atau koneksi Mail Merge berubah, nomor surat tidak sinkron, pegawai lain mengedit template, atau data berada pada beberapa salinan file yang berbeda. Ketergantungan pada file lokal juga membuat pengawasan, audit, cetak ulang, dan pelayanan ketika admin utama tidak berada di kantor menjadi sulit.
+2.2 Tujuan produk
+Menyediakan satu sistem pelayanan surat yang dapat digunakan bersama oleh kelurahan-kelurahan di satu kecamatan.
+Memisahkan data, template, dan penomoran dari file Word yang dapat diedit operator.
+Menghasilkan PDF yang konsisten dan siap print langsung dari browser.
+Membangun arsip surat terstruktur dan dapat dicari kembali berdasarkan NIK, nama, jenis surat, nomor surat, tanggal, atau kelurahan.
+Memastikan perubahan data penduduk atau pejabat tidak mengubah isi surat yang sudah diterbitkan.
+Membuat prototype cloud yang mudah didemokan namun tetap portable ke infrastruktur pemerintah di masa depan.
+3. Ruang Lingkup SIKEPEL v1
+3.1 Termasuk dalam v1
+Login dan manajemen sesi pengguna.
+Multi-kelurahan / multi-tenant.
+Manajemen identitas kelurahan dan pejabat.
+Data penduduk lokal hasil pelayanan.
+Pencarian penduduk berdasarkan NIK dan nama.
+Input penduduk otomatis ketika data belum ditemukan.
+Jenis surat dan form dinamis.
+Template DOCX global dengan placeholder ${placeholder}.
+Validasi placeholder dan versioning template.
+Penomoran surat otomatis dan per-kelurahan.
+Draft, preview, terbit, batal, dan cetak ulang.
+Generate DOCX sementara dan konversi PDF.
+Penyimpanan PDF final di object storage.
+Arsip dan pencarian surat.
+Audit log.
+Dashboard dasar dan laporan operasional sederhana.
+Role dan permission.
+Import data awal opsional dari Excel/CSV.
+Deployment prototype di Vercel + Supabase + Cloud Run.
+3.2 Di luar scope v1
+Integrasi Dukcapil/SIAK.
+Tanda tangan elektronik tersertifikasi.
+Integrasi BSrE.
+Pengajuan mandiri oleh masyarakat melalui portal publik.
+Nomor antrean.
+Pembayaran/retribusi.
+Mobile app native.
+Integrasi WhatsApp/SMS gateway.
+Sinkronisasi otomatis ke sistem kabupaten/kota.
+OCR dokumen warga.
+4. Prinsip Desain
+5. Aktor, Organisasi, dan Hak Akses
+5.1 Struktur organisasi aplikasi
+KECAMATAN
+  └── KELURAHAN A
+      ├── Admin Kelurahan
+      ├── Operator
+      └── Pimpinan
+  └── KELURAHAN B
+      ├── Admin Kelurahan
+      └── Operator
+
+Super Admin Kecamatan berada di atas tenant dan dapat mengelola konfigurasi lintas kelurahan.
+5.2 Role utama
+6. Arsitektur Multi-Kelurahan
+Setiap user memiliki village_id/kelurahan_id. Identitas tersebut berasal dari session dan digunakan server untuk membatasi query. Operator tidak memilih kelurahan secara bebas saat membuat surat. Super Admin Kecamatan menggunakan scope khusus untuk melihat atau mengelola tenant lain.
+Login User
+   ↓
+Session { user_id, role, village_id }
+   ↓
+Authorization Middleware / Service Guard
+   ↓
+Query terfilter village_id
+   ↓
+Database + RLS
+6.1 Aturan isolasi tenant
+Setiap record sensitif yang bersifat lokal memiliki village_id.
+Query operator selalu menggunakan village_id dari session, bukan nilai yang dikirim bebas oleh browser.
+Supabase Row Level Security (RLS) menjadi lapisan tambahan terhadap authorization aplikasi.
+Super Admin Kecamatan dapat memiliki scope lintas tenant yang eksplisit.
+Template global tidak perlu memiliki village_id, kecuali kelak diperlukan override khusus.
+7. Modul dan Requirement Fungsional
+7.1 Requirement detail — Penduduk
+Pencarian minimum mendukung NIK exact/partial dan nama partial.
+NIK wajib 16 digit jika diisi; validasi format bukan verifikasi Dukcapil.
+Jika tidak ditemukan, UI menawarkan “Tambah Penduduk & Lanjutkan Pelayanan”.
+Setelah disimpan, penduduk langsung tersedia untuk form pelayanan aktif.
+Perubahan master penduduk tidak memperbarui snapshot surat lama.
+Histori surat penduduk hanya terlihat sesuai scope kelurahan.
+Sistem harus menangani potensi duplikasi NIK pada tenant yang sama.
+7.2 Requirement detail — Template
+Format utama: DOCX.
+Delimiter placeholder: ${placeholder}.
+Template global terikat ke letter_type.
+Upload template membuat versi baru, tidak menimpa versi lama.
+Hanya satu versi aktif per letter_type untuk pemakaian default.
+Template validator harus memindai placeholder dan membandingkan dengan field yang tersedia.
+Template tidak dapat dihapus jika masih direferensikan surat terbit; hanya dapat dinonaktifkan/diarsipkan.
+Template harus mendukung placeholder pada body, tabel, header, dan footer sejauh engine memungkinkan.
+8. Workflow Pelayanan Surat
+8.1 Happy path
+1. Operator login
+2. Sistem menetapkan tenant dari session
+3. Operator pilih “Buat Pelayanan”
+4. Pilih jenis surat
+5. Cari NIK / nama
+6a. Jika ada → pilih penduduk
+6b. Jika tidak ada → input → simpan penduduk
+7. Isi field khusus surat
+8. Simpan draft / Preview
+9. Generate preview PDF sementara tanpa nomor final atau dengan watermark DRAFT internal
+10. Operator periksa
+11. Klik TERBITKAN
+12. Server validasi ulang
+13. Database mengalokasikan nomor atomik
+14. Snapshot data dibuat
+15. DOCX final dirender dari template aktif
+16. Gotenberg mengonversi DOCX → PDF
+17. PDF di-upload ke storage
+18. Record surat menjadi ISSUED
+19. Operator melihat PDF final dan dapat print/download
+8.2 Ketika konversi PDF gagal setelah nomor dialokasikan
+Sistem tidak boleh diam-diam memberikan nomor baru tanpa jejak. Implementasi yang direkomendasikan adalah menyimpan status GENERATING/ISSUE_PENDING setelah nomor dialokasikan. Jika converter gagal, record tetap memiliki nomor yang sudah dicadangkan dan dapat di-retry dengan idempotency key. Setelah berhasil, status menjadi ISSUED. Jika diperlukan pembatalan permanen, nomor tersebut tetap tercatat sebagai VOID/CANCELLED sesuai kebijakan nomor surat.
+9. Lifecycle Surat
+9.1 Immutability
+Surat ISSUED tidak diedit in-place.
+Perubahan substansial setelah terbit dibuat sebagai pembatalan + surat baru, atau mekanisme revisi yang mempunyai record baru.
+Cetak ulang menggunakan snapshot dan template_version_id yang direkam saat penerbitan.
+Audit log menyimpan alasan pembatalan/revisi.
+10. Sistem Template DOCX dan Placeholder
+10.1 Sumber nilai placeholder
+10.2 Aturan placeholder
+Nama placeholder lowercase snake_case.
+Tidak boleh mengandung spasi.
+Placeholder global yang sama harus memiliki arti yang konsisten di semua jenis surat.
+Field khusus surat didefinisikan di letter_form_fields.
+Placeholder yang tidak dikenal menyebabkan template gagal diaktifkan, kecuali secara eksplisit ditandai optional.
+Nilai null harus memiliki strategi: kosong, fallback, atau block penerbitan sesuai definisi field.
+Formatter dipisahkan dari data mentah, misalnya tanggal_lahir_raw dan tanggal_lahir_formatted tidak perlu keduanya disimpan jika dapat dihasilkan deterministik.
+10.3 Template versioning
+Surat Domisili
+  ├── Template v1 — inactive
+  ├── Template v2 — inactive
+  └── Template v3 — ACTIVE
+
+Surat yang diterbitkan menggunakan v2 tetap menyimpan template_version_id=v2 untuk cetak ulang/audit.
+11. Penomoran Surat
+11.1 Kunci counter
+Default counter key: village_id + letter_type_id + year. Struktur ini dapat diperluas ke month, classification_code, atau sequence_scope jika aturan kecamatan berbeda.
+number_counters
+- village_id
+- letter_type_id
+- year
+- last_sequence
+- updated_at
+
+UNIQUE(village_id, letter_type_id, year)
+11.2 Atomic allocation
+Alokasi nomor harus dilakukan di server/database transaction.
+Frontend tidak boleh menghitung nomor berikutnya.
+Dua operator yang menerbitkan bersamaan harus menerima sequence berbeda.
+Format nomor dibuat setelah sequence didapat.
+Manual adjustment hanya untuk role khusus dan wajib audit reason.
+11.3 Format nomor
+Contoh konfigurasi:
+{kode_surat}/{sequence_padded}/{kode_kelurahan}/{bulan_romawi}/{tahun}
+
+Contoh hasil:
+470/001/KEL/IX/2026
+12. Data Penduduk Lokal Hasil Pelayanan
+SIKEPEL v1 tidak terhubung ke Dukcapil. Data penduduk berasal dari input petugas atau import sumber internal yang diizinkan. Sistem harus menyebutnya sebagai data penduduk/data pelayanan lokal dan tidak menampilkan klaim bahwa data telah diverifikasi Dukcapil.
+12.1 Field minimum master penduduk
+12.2 Snapshot
+resident (master terbaru)
+        ↓ saat terbit
+letter_snapshot.resident = { ...nilai saat itu... }
+
+Update resident setelahnya TIDAK mengubah letter_snapshot.
+13. Model Data dan ERD Konseptual
+districts 1 ─── * villages 1 ─── * users
+                    │
+                    ├── * officials
+                    ├── * residents
+                    ├── * letters
+                    └── * number_counters
+
+letter_types 1 ─── * letter_templates
+letter_types 1 ─── * letter_form_fields
+letter_types 1 ─── * letters
+
+residents 1 ─── * letters
+letter_templates 1 ─── * letters
+users 1 ─── * letters(created_by)
+letters 1 ─── * audit_logs(target)
+13.1 Tabel inti
+14. Arsitektur Aplikasi dan Service Layer
+Browser
+  ↓
+Next.js UI / Server Components
+  ↓
+Server Actions / Route Handlers
+  ↓
+Authorization + Validation (Zod)
+  ↓
+Domain Services
+  ├── ResidentService
+  ├── LetterService
+  ├── NumberingService
+  ├── TemplateService
+  ├── PdfService
+  ├── StorageService
+  └── AuditService
+  ↓
+Repository / Provider Adapters
+  ├── PostgreSQL (Supabase)
+  ├── Supabase Storage
+  ├── Auth Provider
+  └── Gotenberg Converter
+14.1 Service boundary
+Business rule berada di service layer, bukan component UI.
+Repository tidak mengandung aturan bisnis penomoran.
+PDF converter diakses melalui interface agar URL/provider dapat diganti.
+Storage diakses melalui adapter; letter service hanya menerima storage key/result.
+Authorization tenant dilakukan sebelum repository menerima query sensitif.
+15. Pipeline DOCX ke PDF
+Template DOCX dari Storage
+        ↓
+Download ke memory / temporary workspace
+        ↓
+Docxtemplater render ${placeholder}
+        ↓
+Generated DOCX sementara
+        ↓ HTTPS authenticated call
+Gotenberg + LibreOffice (Cloud Run)
+        ↓
+PDF bytes
+        ↓
+Upload Supabase Storage
+        ↓
+Simpan pdf_storage_path + metadata
+        ↓
+Hapus file sementara
+15.1 Requirement converter
+Service converter tidak boleh diekspos sebagai endpoint publik tanpa autentikasi pada konfigurasi pilot/production.
+Request harus memiliki timeout dan retry terbatas.
+Ukuran DOCX/PDF harus dibatasi.
+Converter harus menerima request id/idempotency context untuk tracing.
+Font yang digunakan template harus tersedia pada image/container converter.
+Preview dan final menggunakan pipeline yang sama agar layout konsisten.
+16. Penyimpanan File dan Arsip
+16.1 Struktur storage yang disarankan
+templates/
+  <letter_type_slug>/v1/template.docx
+  <letter_type_slug>/v2/template.docx
+
+generated/
+  <village_id>/<year>/<letter_type_slug>/<letter_id>.pdf
+
+assets/
+  villages/<village_id>/logo.png
+16.2 Aturan akses
+Bucket template: private.
+Bucket generated: private.
+PDF diakses melalui backend atau signed URL berumur pendek.
+Path file bukan mekanisme authorization; authorization tetap berdasarkan database/session.
+File tidak diberi public URL permanen untuk pilot/production.
+17. Keamanan, Privasi, dan Isolasi Data
+17.1 Baseline keamanan
+Semua trafik menggunakan HTTPS.
+Credential rahasia hanya berada di environment variable server.
+Service role key tidak pernah dikirim ke browser.
+Password dikelola provider Auth; aplikasi tidak menyimpan plaintext password.
+RLS diterapkan pada tabel sensitif bila akses langsung Supabase digunakan.
+Tenant scope wajib pada users, residents, letters, officials, counters, dan audit terkait.
+Rate limiting diterapkan untuk login dan endpoint berat seperti generate PDF.
+PDF converter menerima request hanya dari backend yang terautentikasi.
+Audit event untuk perubahan permission, penomoran, template, pejabat, dan pembatalan surat.
+Data riil digunakan hanya setelah ada otorisasi operasional dari instansi; sistem tidak memerlukan watermark demo untuk tetap membedakan fase proyek.
+17.2 Data minimization
+Jenis surat hanya meminta field yang benar-benar diperlukan. Field sensitif tidak perlu ditampilkan pada dashboard/list jika tidak dibutuhkan. NIK pada log teknis sebaiknya dimasking; NIK penuh hanya tampil pada konteks pelayanan yang berwenang.
+18. Audit Log dan Observabilitas
+18.1 Logging teknis
+Gunakan correlation/request ID.
+Jangan log PDF bytes atau DOCX contents.
+Mask credential, token, NIK, dan payload sensitif.
+Error converter harus dapat ditelusuri tanpa menyimpan isi dokumen pada log.
+19. Infrastruktur Prototype dan Deployment
+19.1 Baseline
+19.2 Deployment flow
+GitHub main
+   ↓
+Vercel Production Deployment
+   ↓
+Environment Variables
+   ├── Supabase/Postgres
+   ├── Storage
+   └── Cloud Run Gotenberg
+
+Database migration dijalankan secara terkontrol melalui migration tooling, bukan otomatis dari browser.
+19.3 Environment separation
+20. Backup, Restore, dan Portabilitas
+20.1 Backup
+Backup database berkala sesuai kemampuan provider dan prosedur tambahan bila diperlukan.
+Template DOCX dan PDF dianggap data arsip dan perlu strategi backup di luar database.
+Konfigurasi environment tidak masuk source repository.
+Restore procedure harus diuji sebelum pilot diperluas.
+20.2 Migrasi ke server kecamatan
+Prototype: Vercel + Supabase + Cloud Run
+            ↓ adapter/provider replacement
+Production Kecamatan:
+- Next.js pada server/container kecamatan
+- PostgreSQL internal
+- S3/MinIO/filesystem terkelola
+- Gotenberg internal
+- Optional Keycloak/SSO/LDAP
+21. Requirement Non-Fungsional
+22. Validasi, Error Handling, dan UX
+22.1 Validasi form
+Validasi client untuk feedback cepat dan validasi server sebagai sumber kebenaran.
+Field wajib berasal dari schema jenis surat.
+Pesan error menggunakan bahasa operasional, bukan stack trace.
+Tanggal dan nilai numerik disimpan dalam format canonical; formatter hanya untuk tampilan.
+22.2 Error state penting
+23. Acceptance Criteria SIKEPEL v1
+PASS jika: Operator Kelurahan A tidak dapat melihat penduduk dan arsip Kelurahan B.
+PASS jika: Satu template global Surat Domisili dapat menghasilkan kop dan pejabat berbeda sesuai user tenant.
+PASS jika: Jika NIK belum ada, operator dapat menambahkan penduduk dan melanjutkan pelayanan tanpa mengulang input.
+PASS jika: Dua operator menerbitkan surat bersamaan tanpa nomor sequence duplikat.
+PASS jika: Surat yang telah diterbitkan dapat dicetak ulang dengan isi historis yang sama meskipun master penduduk/pejabat berubah.
+PASS jika: Upload template baru menghasilkan versi baru dan tidak mengubah surat lama.
+PASS jika: Placeholder yang tidak dikenal terdeteksi sebelum template diaktifkan.
+PASS jika: Generate surat menghasilkan PDF yang dapat dipreview, didownload, dan diprint.
+PASS jika: Kegagalan converter dapat di-retry tanpa mendapatkan nomor resmi baru.
+PASS jika: Aksi terbit, batal, ubah template, ubah pejabat, dan ubah role tercatat pada audit log.
+PASS jika: PDF dan template tidak memiliki public URL permanen tanpa authorization.
+PASS jika: Aplikasi dapat dideploy melalui GitHub → Vercel dan terhubung ke Supabase + Cloud Run melalui environment variables.
+24. Skenario Pengujian
+25. Roadmap Pengembangan
+25.1 v1 — Core Prototype
+Auth + multi-tenant
+Kelurahan + pejabat
+Penduduk lokal
+Jenis surat + form dinamis
+Template global + validator
+Draft/preview/issue
+Numbering atomik
+DOCX → PDF
+Storage + arsip
+Audit log
+Dashboard dasar
+25.2 v1.1 — Pilot Hardening
+Approval opsional
+Backup/restore operasional
+Monitoring dan alerting
+Rate limit lebih kuat
+Bulk import terkontrol
+Pengaturan format nomor lebih fleksibel
+Export laporan
+25.3 v2 — Integrasi dan layanan lanjutan
+QR verification
+Tanda tangan elektronik/BSrE jika tersedia
+Portal pengajuan masyarakat
+Notifikasi
+Integrasi sistem pemerintah yang diizinkan
+SSO/Keycloak/LDAP
+Analitik pelayanan lebih lengkap
+26. Keputusan Terbuka / TBD
+Lampiran A. Kamus Placeholder Awal
+Lampiran B. Permission Matrix
+* Hak menerbitkan operator dapat diubah jika kecamatan menghendaki approval pimpinan.
+Lampiran C. Struktur Database Awal
+villages
+id uuid pk
+district_id uuid fk
+code varchar
+name varchar
+address text
+phone varchar
+email varchar
+postal_code varchar
+is_active bool
+created_at timestamptz
+users
+id uuid pk
+auth_id uuid unique
+village_id uuid nullable
+name varchar
+role enum
+is_active bool
+created_at timestamptz
+officials
+id uuid pk
+village_id uuid fk
+name varchar
+nip varchar
+title varchar
+start_date date
+end_date date nullable
+is_active bool
+residents
+id uuid pk
+village_id uuid fk
+nik varchar(16)
+no_kk varchar(16)
+name varchar
+birth_place varchar
+birth_date date
+gender varchar
+religion varchar
+marital_status varchar
+occupation varchar
+address text
+rt varchar
+rw varchar
+created_by uuid
+updated_by uuid
+timestamps
+unique(village_id, nik)
+letter_types
+id uuid pk
+code varchar unique
+name varchar
+slug varchar unique
+is_active bool
+numbering_config jsonb
+letter_form_fields
+id uuid pk
+letter_type_id uuid fk
+key varchar
+label varchar
+type varchar
+required bool
+validation jsonb
+sort_order int
+letter_templates
+id uuid pk
+letter_type_id uuid fk
+version int
+storage_path text
+placeholders jsonb
+is_active bool
+created_by uuid
+created_at timestamptz
+letters
+id uuid pk
+village_id uuid fk
+resident_id uuid fk
+letter_type_id uuid fk
+template_id uuid fk
+status enum
+sequence int nullable
+letter_number varchar nullable
+issue_date date nullable
+form_data jsonb
+snapshot_data jsonb
+pdf_storage_path text nullable
+created_by uuid
+issued_by uuid nullable
+timestamps
+number_counters
+id uuid pk
+village_id uuid fk
+letter_type_id uuid fk
+year int
+last_sequence int
+unique(village_id, letter_type_id, year)
+audit_logs
+id bigserial pk
+village_id uuid nullable
+user_id uuid
+action varchar
+target_type varchar
+target_id uuid nullable
+metadata jsonb
+created_at timestamptz
+Lampiran D. Struktur Environment Variable
+DATABASE_URL=
+DIRECT_URL=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_STORAGE_BUCKET_TEMPLATES=
+SUPABASE_STORAGE_BUCKET_GENERATED=
+PDF_CONVERTER_URL=
+PDF_CONVERTER_AUDIENCE=
+GOOGLE_CLOUD_SERVICE_ACCOUNT_*=[server only / preferred workload identity where possible]
+APP_URL=
+AUTH_SECRET=
+LOG_LEVEL=
+Catatan: nama final environment variable mengikuti implementasi. Secret tidak boleh disimpan di repository atau dikirim ke browser.
+Penutup
+Dokumen ini menjadi baseline implementasi SIKEPEL v1. Setelah template DOCX nyata, daftar jenis surat, format nomor surat, identitas kelurahan, dan aturan operasional kecamatan tersedia, spesifikasi dapat diperbarui pada bagian field, placeholder, numbering configuration, permission, dan acceptance criteria tanpa mengubah prinsip arsitektur utama.
+Dokumen
+Spesifikasi Teknis & Fungsional
+Versi
+1.0
+Status
+Baseline pengembangan SIKEPEL v1
+Tujuan
+Blueprint pembangunan prototype untuk pengajuan ke pihak kecamatan
+Item
+Keterangan
+Nama dokumen
+SIKEPEL v1 Technical & Functional Specification
+Produk
+SIKEPEL — Sistem Informasi Pelayanan Kelurahan
+Versi spesifikasi
+1.0
+Tahap
+Prototype / pilot-ready
+Model aplikasi
+Web application, multi-kelurahan, multi-user
+Output surat
+PDF sebagai output resmi; DOCX digunakan sebagai template sumber
+Database prototype
+Supabase PostgreSQL
+Hosting aplikasi
+Vercel
+Konversi PDF
+Gotenberg + LibreOffice pada Google Cloud Run
+Status dokumen
+Baseline pengembangan; dapat direvisi setelah template surat dan aturan kecamatan diterima
+Prinsip
+Implementasi
+Single Source of Truth
+Database menjadi sumber data operasional; Word tidak menyimpan logika bisnis.
+Template Global, Data Lokal
+Template surat dikelola global; kop, pejabat, penduduk, nomor, dan arsip mengikuti kelurahan.
+Snapshot on Issue
+Semua data penting disalin ke snapshot ketika surat diterbitkan.
+Tenant Isolation
+Operator hanya mengakses data kelurahannya kecuali role tingkat kecamatan.
+PDF-first Output
+PDF menjadi artefak final untuk preview, print, download, dan arsip.
+Portable Infrastructure
+Provider cloud dibungkus oleh service/adapter agar dapat diganti.
+Least Privilege
+Hak akses diberikan sesuai peran dan kebutuhan kerja.
+Auditability
+Aksi kritis dicatat: terbit, batal, edit penduduk, template, nomor, user, pejabat.
+No Silent Mutation
+Surat terbit tidak berubah diam-diam saat master data berubah.
+Fail Safe Numbering
+Nomor surat dialokasikan di transaksi database dan tidak bergantung counter di frontend.
+Role
+Scope
+Kemampuan Utama
+Super Admin Kecamatan
+Semua kelurahan
+Kelurahan, template global, jenis surat, pengguna tingkat kecamatan, laporan lintas kelurahan, konfigurasi global.
+Admin Kelurahan
+Satu kelurahan
+Profil kelurahan, pejabat, operator, konfigurasi nomor lokal, arsip dan data kelurahan sendiri.
+Operator
+Satu kelurahan
+Penduduk, pelayanan, draft, preview, terbit sesuai izin, cetak ulang.
+Pimpinan
+Satu / beberapa kelurahan
+Lihat arsip dan laporan; approval dapat diaktifkan pada fase berikutnya.
+ID
+Modul
+Requirement Ringkas
+FR-AUTH
+Autentikasi & Session
+Login, logout, session expiry, role, tenant context, nonaktifkan user.
+FR-VILLAGE
+Kelurahan
+CRUD identitas kelurahan, alamat, kontak, kode, metadata kop.
+FR-OFFICIAL
+Pejabat
+Tambah pejabat, jabatan, NIP, periode, status penandatangan aktif.
+FR-USER
+Pengguna
+CRUD user sesuai scope role; aktivasi/nonaktivasi; reset credential sesuai mekanisme auth.
+FR-RESIDENT
+Penduduk
+Cari NIK/nama, tambah saat tidak ada, edit master, lihat histori surat.
+FR-LETTERTYPE
+Jenis Surat
+Nama surat, kode, field dinamis, aturan penomoran, status aktif.
+FR-TEMPLATE
+Template
+Upload DOCX global, versioning, placeholder scan, validasi, aktivasi versi.
+FR-SERVICE
+Pelayanan
+Pilih jenis, pilih/input penduduk, isi field khusus, simpan draft, preview.
+FR-NUMBER
+Penomoran
+Counter atomik per kelurahan + jenis surat + periode, manual override terbatas.
+FR-ISSUE
+Penerbitan
+Validasi final, alokasi nomor, snapshot, generate, convert, simpan PDF, status ISSUED.
+FR-ARCHIVE
+Arsip
+Cari/filter, detail, preview PDF, download, print, cetak ulang.
+FR-AUDIT
+Audit Log
+Catat login/aksi kritis dengan user, tenant, waktu, target, before/after jika relevan.
+FR-DASH
+Dashboard
+Jumlah pelayanan hari/bulan, surat per jenis, aktivitas terbaru, ringkasan tenant.
+FR-IMPORT
+Import Data
+Import data penduduk dari CSV/XLSX dengan validasi format dan duplikasi.
+FR-SETTINGS
+Pengaturan
+Konfigurasi format tanggal, format nomor, nama kecamatan, identitas global.
+Status
+Arti
+Nomor Resmi
+PDF Final
+DRAFT
+Data masih dapat diedit
+Belum
+Belum
+PREVIEW
+Preview sementara berhasil dibuat
+Belum
+Preview saja
+ISSUE_PENDING
+Nomor sudah dialokasikan; proses generate/conversion berjalan atau perlu retry
+Ya
+Belum tentu
+ISSUED
+Surat resmi berhasil dibuat
+Ya
+Ya
+CANCELLED
+Surat dibatalkan setelah penerbitan/nomor dialokasikan
+Tetap tercatat
+Disimpan/ditandai sesuai kebijakan
+VOID
+Nomor dinyatakan tidak digunakan dengan alasan terdokumentasi
+Tetap tercatat
+Opsional
+Namespace Konseptual
+Contoh
+Sumber
+Organisasi
+${nama_kelurahan}, ${alamat_kelurahan}, ${nama_kecamatan}
+Profil kelurahan / kecamatan
+Penduduk
+${nama}, ${nik}, ${alamat}, ${pekerjaan}
+Master penduduk + snapshot
+Surat
+${nomor_surat}, ${tanggal_surat}, ${keperluan}
+Pelayanan / numbering service
+Pejabat
+${nama_penandatangan}, ${nip_penandatangan}, ${jabatan_penandatangan}
+Pejabat aktif / pilihan penandatangan
+Derived
+${bulan_romawi}, ${umur}, ${penghasilan_terbilang}
+Formatter/derived field service
+Kelompok
+Field minimum
+Identitas
+nik, no_kk, nama, tempat_lahir, tanggal_lahir, jenis_kelamin
+Status
+agama, status_perkawinan, pekerjaan
+Alamat
+alamat, rt, rw, kelurahan_text, kecamatan_text, kabupaten_kota_text, provinsi_text
+Metadata
+village_id, created_by, created_at, updated_by, updated_at
+Tabel
+Fungsi
+districts
+Identitas kecamatan.
+villages
+Tenant/kelurahan dan data kop.
+users
+Profil aplikasi; terhubung ke auth provider.
+officials
+Pejabat dan periode aktif.
+residents
+Master penduduk lokal per tenant.
+letter_types
+Jenis surat global.
+letter_form_fields
+Definisi form dinamis per jenis surat.
+letter_templates
+Versi template DOCX per jenis surat.
+letters
+Transaksi pelayanan/surat.
+letter_snapshots
+Snapshot JSON/struktur normalized saat terbit.
+number_counters
+Sequence atomik.
+audit_logs
+Jejak aksi penting.
+file_assets
+Metadata file template/PDF bila dipisah dari letters.
+Event
+Minimal data yang dicatat
+LOGIN_SUCCESS/FAIL
+user/auth identifier, tenant, timestamp, source metadata yang aman
+RESIDENT_CREATE/UPDATE
+user, tenant, resident_id, field yang berubah; hindari menyalin data penuh ke log teknis
+TEMPLATE_UPLOAD/ACTIVATE
+template_id, version, user, timestamp
+LETTER_ISSUE
+letter_id, nomor, type, tenant, user
+LETTER_CANCEL/VOID
+letter_id, nomor, alasan, user
+NUMBER_ADJUSTMENT
+counter key, nilai lama/baru, alasan, user
+USER_ROLE_CHANGE
+target user, role lama/baru, actor
+OFFICIAL_CHANGE
+official id, status/periode, actor
+Komponen
+Provider Prototype
+Fungsi
+Web App/API
+Vercel
+Next.js frontend, server actions, route handlers.
+Database
+Supabase PostgreSQL
+Data aplikasi, transaksi, numbering, audit.
+Authentication
+Supabase Auth atau provider terpisah
+Login dan identity.
+Object Storage
+Supabase Storage
+Template DOCX, PDF, logo/assets.
+PDF Converter
+Google Cloud Run + Gotenberg/LibreOffice
+Konversi DOCX menjadi PDF.
+Source Control
+GitHub
+Repository dan CI/CD ke Vercel.
+Environment
+Tujuan
+Data
+Local Development
+Pengembangan dan unit/integration test
+Data lokal/test
+Preview/Staging
+Review branch dan QA
+Data test terbatas
+Production Prototype / Pilot
+Demo resmi dan/atau penggunaan terbatas setelah otorisasi
+Sesuai kebijakan instansi; tidak memerlukan watermark demo pada surat
+Kategori
+Target v1
+Performance
+Pencarian penduduk umum < 2 detik pada kondisi jaringan normal; generate PDF ditampilkan sebagai proses dengan status yang jelas.
+Reliability
+Penerbitan idempotent; retry converter tidak membuat nomor surat baru.
+Concurrency
+Minimal mendukung beberapa operator satu kelurahan menerbitkan bersamaan tanpa nomor duplikat.
+Usability
+Alur pelayanan dapat dilakukan tanpa membuka Excel atau Word.
+Compatibility
+Browser modern desktop; layout diprioritaskan untuk PC/laptop kantor.
+Maintainability
+TypeScript, modular service layer, migration database, lint/test.
+Security
+Tenant isolation, RBAC, private storage, secret management, audit.
+Portability
+Provider cloud dapat diganti melalui adapter/config.
+Auditability
+Surat terbit, pembatalan, nomor, dan perubahan konfigurasi memiliki jejak.
+Accessibility
+Form mempunyai label, error message jelas, keyboard-friendly pada fungsi inti.
+Kasus
+Perilaku yang diharapkan
+NIK sudah ada
+Tawarkan menggunakan record yang ada atau perbaiki data sesuai permission.
+Template invalid
+Tidak dapat diaktifkan; tampilkan placeholder bermasalah.
+Converter timeout
+Status tetap ISSUE_PENDING/PREVIEW_FAILED; tawarkan retry.
+Upload storage gagal
+Jangan tandai ISSUED sebelum PDF final tersimpan.
+Nomor collision
+Harus dicegah constraint/transaction; backend retry sesuai desain.
+User tidak punya akses tenant
+HTTP 403 / UI akses ditolak; tidak bocorkan keberadaan record.
+Template berubah saat draft
+Draft preview memakai versi yang ditentukan; saat issue sistem merekam template version yang benar.
+ID
+Skenario
+Expected
+TC-001
+Login operator valid
+User masuk dan tenant terpasang sesuai profil.
+TC-002
+Cross-tenant access
+Operator A mencoba membuka ID surat B → ditolak.
+TC-003
+Penduduk baru
+Cari NIK tidak ada → input → simpan → lanjut surat.
+TC-004
+Penduduk lama
+Cari NIK ada → field umum terisi.
+TC-005
+Template multi-kelurahan
+Template sama menghasilkan identitas kelurahan sesuai session.
+TC-006
+Pejabat aktif
+Placeholder penandatangan mengambil pejabat yang dipilih/aktif.
+TC-007
+Concurrent numbering
+Dua request issue paralel mendapat nomor unik.
+TC-008
+Converter fail/retry
+Retry menghasilkan PDF untuk letter_id dan nomor yang sama.
+TC-009
+Snapshot resident
+Edit master setelah issue tidak mengubah cetak ulang.
+TC-010
+Snapshot official
+Ganti lurah tidak mengubah surat historis.
+TC-011
+Template version
+Aktifkan v2; surat v1 lama tetap memakai v1.
+TC-012
+Audit
+Setiap aksi kritis menghasilkan entry audit yang benar.
+TC-013
+Private PDF
+Akses PDF tanpa authorization/signed mechanism ditolak.
+TC-014
+Cancel issued letter
+Status dan alasan tercatat; nomor tidak kembali ke pool.
+No
+Keputusan yang dibutuhkan
+Default sementara
+1
+Daftar kelurahan dan identitas masing-masing
+Konfigurasi melalui Super Admin.
+2
+Format nomor surat per jenis dan per kelurahan
+Counter per village + letter type + year.
+3
+Apakah nomor sequence bersama semua jenis surat atau terpisah
+Terpisah per jenis surat.
+4
+Siapa yang boleh menekan Terbitkan
+Operator, dapat diperketat ke approval di v1.1.
+5
+Daftar lengkap field master penduduk
+Gunakan field minimum + perluasan dari template nyata.
+6
+Daftar jenis surat
+Diisi berdasarkan layanan aktual kecamatan/kelurahan.
+7
+Aturan pembatalan/VOID
+Nomor tetap tercatat dan alasan wajib.
+8
+Penyimpanan DOCX generated
+Default: sementara saja; PDF final disimpan.
+9
+Retention PDF
+Belum ditentukan; mengikuti kebijakan arsip instansi.
+10
+Penggunaan data riil pada pilot
+Memerlukan keputusan/otorisasi instansi.
+Placeholder
+Arti
+Sumber
+${nama_kelurahan}
+Nama kelurahan tenant aktif
+Organisasi
+${alamat_kelurahan}
+Alamat kantor kelurahan
+Organisasi
+${telepon_kelurahan}
+Telepon kantor
+Organisasi
+${email_kelurahan}
+Email kantor
+Organisasi
+${nama_kecamatan}
+Nama kecamatan
+Organisasi
+${kabupaten_kota}
+Nama kabupaten/kota
+Organisasi
+${provinsi}
+Nama provinsi
+Organisasi
+${kode_pos_kelurahan}
+Kode pos
+Organisasi
+${nama}
+Nama penduduk
+Penduduk
+${nik}
+NIK 16 digit
+Penduduk
+${no_kk}
+Nomor KK
+Penduduk
+${tempat_lahir}
+Tempat lahir
+Penduduk
+${tanggal_lahir}
+Tanggal lahir terformat
+Penduduk
+${jenis_kelamin}
+Jenis kelamin
+Penduduk
+${agama}
+Agama
+Penduduk
+${status_perkawinan}
+Status perkawinan
+Penduduk
+${pekerjaan}
+Pekerjaan
+Penduduk
+${alamat}
+Alamat penduduk
+Penduduk
+${rt}
+RT
+Penduduk
+${rw}
+RW
+Penduduk
+${nomor_surat}
+Nomor surat final
+Surat
+${tanggal_surat}
+Tanggal penerbitan terformat
+Surat
+${keperluan}
+Keperluan/keterangan
+Surat
+${kode_surat}
+Kode klasifikasi/jenis
+Surat
+${bulan_romawi}
+Bulan penerbitan romawi
+Derived
+${tahun}
+Tahun penerbitan
+Derived
+${umur}
+Umur terhitung
+Derived
+${penghasilan}
+Penghasilan terformat
+Field khusus
+${penghasilan_terbilang}
+Nilai terbilang
+Derived
+${nama_penandatangan}
+Nama pejabat penandatangan
+Pejabat
+${nip_penandatangan}
+NIP pejabat
+Pejabat
+${jabatan_penandatangan}
+Jabatan pada surat
+Pejabat
+Fitur
+Super Admin
+Admin Kelurahan
+Operator
+Pimpinan
+Kelola kelurahan
+CRUD
+Read/Edit sendiri
+Tidak
+Read
+Kelola template global
+CRUD
+Read
+Read active
+Read
+Kelola jenis surat
+CRUD
+Read
+Read
+Read
+Kelola pejabat
+Semua
+CRUD tenant
+Read
+Read
+Kelola user
+Semua
+Tenant
+Tidak
+Tidak
+Penduduk
+Lintas tenant
+Tenant
+Tenant
+Read tenant
+Buat draft surat
+Ya
+Ya
+Ya
+Opsional
+Terbitkan
+Ya
+Ya
+Ya*
+Opsional
+Batal/VOID
+Ya
+Ya
+Terbatas
+Opsional
+Arsip
+Semua
+Tenant
+Tenant
+Tenant
+Audit Log
+Semua
+Tenant
+Tidak/terbatas
+Read tenant
+Laporan lintas kelurahan
+Ya
+Tidak
+Tidak
+Jika diberi scope

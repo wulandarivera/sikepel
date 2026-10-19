@@ -1,0 +1,1 @@
+import test from "node:test";import assert from "node:assert/strict";import {readFileSync} from "node:fs";test("HTML editor identifies itself accurately",()=>{const s=readFileSync('src/components/template-editor-modal.tsx','utf8');assert.ok(!s.includes('LibreOffice Web Engine'));assert.ok(!s.includes('— LibreOffice Writer'));assert.ok(s.includes('Editor Template SIKEPEL'));});

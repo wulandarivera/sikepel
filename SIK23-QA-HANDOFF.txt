@@ -1,0 +1,13 @@
+SIK23 QA HANDOFF
+Preparation only; not production approved; not Waiting fix.
+Base 6d6064d898ccb9a81a6d76b2bfad983a8f4ab25a. App0.5.52 gateway1.0.2.
+Run python3 /home/cibodas/apps/sikepel/runtime-preflight/sik23-preservation/sik23-check.py
+Default nine commands: gateway build, built HTTP, source fake session6, built fake session6, gateway suite, app typecheck, app full suite, Next build, source/dist parity.
+Mandatory bwrap private net/PID/IPC/UTS; clear env; tmpfs home/tmp; only isolated worktree writable, dependency mounts read-only. Never invoke dist/index.js or actual auth import. Session tests transpile actual manager after replacing imports with synthetic ports; compiled manager also exercised.
+RED actual auth deletion: sik16-check-3v_ao5iq/check-0.log (5 failures including missing credentials). API RED sik16-check-x3r1764d/check-0.log (200 vs409).
+Full gate sik16-check-a0wbfw2q: seven exits0, wa:test1 obsolete chmod expectation. Followup sik16-check-sjhxzgbx both0 after fixture directory mode0700. Built session sik16-check-41u251g6 exit0.
+Automatic fatal init/close/decrypt3 -> resetSession compatibility name now blocks/disconnects without delete/logout/reconnect. Status state=blocked, action=operator_review_required. Retry budget3 for manager lifetime, no reset on connection success. No automatic resume; operator review required.
+POST /logout always409 AFTER existing bearer/village authorization; never calls manager. Direct logout blocks then rejects. Compatibility change intentional. App proxy currently maps409 to503 and strips new status fields; UI cannot display action yet; operator uses authenticated gateway health/status. No destructive endpoint enabled. UI followup must not restore deletion.
+Session module no fs.rm or socket.logout remains. Other app fs.rm callsites are unrelated db lock/doc cleanup, untouched. No auth content/path/error detail emitted by new block logs. Existing dependencies app9 mismatch remains separate rollout blocker; no package integrity claim. Existing sik17 artifacts untouched. Fallback not known-good. Permanent sikepel-qa audit required; review not done.
+
+Consolidated final run result /home/cibodas/apps/sikepel/runtime-preflight/sik16-check-edjp0cdl/result.json; exact hashes in final evidence manifest.

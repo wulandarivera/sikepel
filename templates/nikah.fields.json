@@ -1,0 +1,129 @@
+[
+  {
+    "key": "negara_pemohon",
+    "label": "Kewarganegaraan pemohon",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "status_n1",
+    "label": "Status perkawinan untuk N1",
+    "type": "select",
+    "options": [
+      "Jejaka",
+      "Duda",
+      "Beristri",
+      "Perawan",
+      "Janda"
+    ],
+    "required": true
+  },
+  {
+    "key": "istri_ke",
+    "label": "Beristri ke",
+    "type": "number",
+    "required": false
+  },
+  {
+    "key": "nama_bapak",
+    "label": "Nama lengkap dan alias ayah",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "nik_bapak",
+    "label": "NIK ayah",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "tempat_lahir_bapak",
+    "label": "Tempat lahir ayah",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "tanggal_lahir_bapak",
+    "label": "Tanggal lahir ayah",
+    "type": "date",
+    "required": true
+  },
+  {
+    "key": "negara_bapak",
+    "label": "Kewarganegaraan ayah",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "agama_bapak",
+    "label": "Agama ayah",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "pekerjaan_bapak",
+    "label": "Pekerjaan ayah",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "alamat_bapak",
+    "label": "Alamat lengkap ayah",
+    "type": "textarea",
+    "required": true
+  },
+  {
+    "key": "nama_ibu",
+    "label": "Nama lengkap dan alias ibu",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "nik_ibu",
+    "label": "NIK ibu",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "tempat_lahir_ibu",
+    "label": "Tempat lahir ibu",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "tanggal_lahir_ibu",
+    "label": "Tanggal lahir ibu",
+    "type": "date",
+    "required": true
+  },
+  {
+    "key": "negara_ibu",
+    "label": "Kewarganegaraan ibu",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "agama_ibu",
+    "label": "Agama ibu",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "pekerjaan_ibu",
+    "label": "Pekerjaan ibu",
+    "type": "text",
+    "required": true
+  },
+  {
+    "key": "alamat_ibu",
+    "label": "Alamat lengkap ibu",
+    "type": "textarea",
+    "required": true
+  },
+  {
+    "key": "catatan",
+    "label": "Catatan Untuk Petugas (tidak tercetak)",
+    "type": "textarea",
+    "required": false
+  }
+]

@@ -1,0 +1,2 @@
+import test from "node:test";import assert from "node:assert/strict";import {readFileSync} from "node:fs";
+test("sample preview explicitly distinguishes fictional data and unofficial document",()=>{const s=readFileSync('src/components/template-editor-modal.tsx','utf8');assert.ok(s.includes('CONTOH — BUKAN SURAT RESMI'));assert.ok(s.includes('Data contoh fiktif, bukan data warga.'));});
